@@ -2,6 +2,8 @@
 
 Ce fichier explique **le projet en entier** (l'idée, la chaîne de compilation, ce qu'on rend), puis **qui fait quoi** pour avancer vite et en parallèle sur GitHub sans se marcher dessus.
 
+> 📘 **Pour réaliser chaque étape pas à pas** (explications pour débutants, code Alto, tests à écrire) : voir le dossier [`guide/`](guide/README.md). Commencez par [`guide/00_installation.md`](guide/00_installation.md).
+
 ---
 
 ## 1. L'idée générale du projet
@@ -11,12 +13,12 @@ On invente **notre propre langage de programmation**, puis on écrit **à la mai
 À la fin, cette commande doit marcher :
 
 ```bash
-python -m monlangage run programme.xyz
+python -m alto run programme.alt
 ```
 
-(`monlangage` = le nom de notre paquet Python, `.xyz` = l'extension de nos fichiers. **À choisir ensemble à la réunion 0.**)
+Notre langage s'appelle **Alto**, ses fichiers ont l'extension **`.alt`**, et le paquet Python s'appelle **`alto`**. (Dans les énoncés du cours, `monlangage` = `alto`, et `projet/` = la racine de ce dépôt.)
 
-Le langage de démonstration fourni s'appelle **Brindille** (dossier [`demo/`](demo/)). C'est un exemple pour comprendre, **pas un modèle à recopier**.
+Le langage de démonstration fourni s'appelle **Brindille** (dossier `langage/demo/` du dépôt du cours). C'est un exemple pour comprendre, **pas un modèle à recopier**.
 
 ### La chaîne de compilation (imposée)
 
@@ -24,13 +26,13 @@ Le langage de démonstration fourni s'appelle **Brindille** (dossier [`demo/`](d
 texte source ──lexer──▶ tokens ──parser──▶ arbre (AST) ──analyse sémantique──▶ arbre vérifié ──génération──▶ code Python ──exec──▶ résultat
 ```
 
-| Maillon | Ce qu'il fait | Exemple |
-|---|---|---|
-| **Lexer** | découpe le texte en mots (*tokens*) | `soit x = 3;` → `SOIT`, `IDENT(x)`, `EGAL`, `ENTIER(3)`, `POINT_VIRGULE` |
-| **Parser** | assemble les tokens en arbre selon la grammaire | `1 + 2 * 3` → `Binaire(+, 1, Binaire(*, 2, 3))` |
-| **Analyse sémantique** | vérifie le sens : variable déclarée ? double déclaration ? `retourne` hors fonction ? | `affiche y;` sans `soit y` → erreur ligne/colonne |
-| **Génération** | transforme l'arbre en texte Python | `si x > 1 { ... }` → `if x > 1:` |
-| **CLI / REPL** | la ligne de commande `run`, `transpile`, `check`, `repl` | |
+| Maillon                | Ce qu'il fait                                                                         | Exemple                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **Lexer**              | découpe le texte en mots (_tokens_)                                                   | `var x = 3;` → `VAR`, `IDENT(x)`, `EGAL`, `ENTIER(3)`, `POINT_VIRGULE` |
+| **Parser**             | assemble les tokens en arbre selon la grammaire                                       | `1 + 2 * 3` → `Binaire(+, 1, Binaire(*, 2, 3))`                          |
+| **Analyse sémantique** | vérifie le sens : variable déclarée ? double déclaration ? `rends` hors fonction ? | `affiche y;` sans `soit y` → erreur ligne/colonne                        |
+| **Génération**         | transforme l'arbre en texte Python                                                    | `si x > 1 { ... }` → `if x > 1:`                                         |
+| **CLI / REPL**         | la ligne de commande `run`, `transpile`, `check`, `repl`                              |                                                                          |
 
 ### Ce que notre langage doit avoir au minimum
 
@@ -53,33 +55,33 @@ texte source ──lexer──▶ tokens ──parser──▶ arbre (AST) ─�
 
 ### Les 13 étapes du sujet
 
-| Étape | Fichier(s) | Notions Python |
-|---|---|---|
-| 1 Spécification | `specification.md`, `exemples/` | grammaire EBNF |
-| 2 Tokens | `tokens.py`, `erreurs.py` (Position) | `Enum`, `@dataclass(frozen=True)`, `__repr__` |
-| 3 Lexer | `lexer.py`, `flux.py`, `erreurs.py` | générateurs, exceptions avec position |
-| 4 AST | `noeuds.py` | dataclasses, unions de types (`type Expr = ...`) |
-| 5 Expressions (Pratt) | `parser.py` | fonctions de 1ʳᵉ classe, décorateurs paramétrés |
-| 6 Instructions | `parser.py` | collecte et chaînage d'exceptions (`ErreursMultiples`) |
-| 7 Sémantique | `symboles.py`, `semantique.py` | `singledispatchmethod`, `@contextmanager` |
-| 8 Génération | `emetteur.py`, `generateur.py` | context manager, `match`, `assert_never` |
-| 9 CLI + REPL | `compilateur.py`, `cli.py`, `repl.py`, `__main__.py` | `argparse`, générateur avec `send` |
-| 10 Qualité | `backend.py`, `formateur.py` | `Protocol`, ouvert/fermé, `mypy --strict` |
-| 11 *(extension)* module `ast` | `generateur_ast.py` | `ast`, `ast.unparse` |
-| 12 *(extension)* typage statique | `typage.py` | `Enum`, typage graduel |
-| 13 *(extension)* source maps | `sourcemap.py` | `TypedDict`, `Literal` |
+| Étape                            | Fichier(s)                                           | Notions Python                                         |
+| -------------------------------- | ---------------------------------------------------- | ------------------------------------------------------ |
+| 1 Spécification                  | `specification.md`, `exemples/`                      | grammaire EBNF                                         |
+| 2 Tokens                         | `tokens.py`, `erreurs.py` (Position)                 | `Enum`, `@dataclass(frozen=True)`, `__repr__`          |
+| 3 Lexer                          | `lexer.py`, `flux.py`, `erreurs.py`                  | générateurs, exceptions avec position                  |
+| 4 AST                            | `noeuds.py`                                          | dataclasses, unions de types (`type Expr = ...`)       |
+| 5 Expressions (Pratt)            | `parser.py`                                          | fonctions de 1ʳᵉ classe, décorateurs paramétrés        |
+| 6 Instructions                   | `parser.py`                                          | collecte et chaînage d'exceptions (`ErreursMultiples`) |
+| 7 Sémantique                     | `symboles.py`, `semantique.py`                       | `singledispatchmethod`, `@contextmanager`              |
+| 8 Génération                     | `emetteur.py`, `generateur.py`                       | context manager, `match`, `assert_never`               |
+| 9 CLI + REPL                     | `compilateur.py`, `cli.py`, `repl.py`, `__main__.py` | `argparse`, générateur avec `send`                     |
+| 10 Qualité                       | `backend.py`, `formateur.py`                         | `Protocol`, ouvert/fermé, `mypy --strict`              |
+| 11 _(extension)_ module `ast`    | `generateur_ast.py`                                  | `ast`, `ast.unparse`                                   |
+| 12 _(extension)_ typage statique | `typage.py`                                          | `Enum`, typage graduel                                 |
+| 13 _(extension)_ source maps     | `sourcemap.py`                                       | `TypedDict`, `Literal`                                 |
 
 ---
 
 ## 2. Arborescence du dépôt
 
-On suit l'arborescence conseillée ([`gabarits/arborescence.md`](gabarits/arborescence.md)) : **un module par étape, un fichier de test par étape**. C'est ce qui permet de travailler à 4 sans conflits Git : chacun a *ses* fichiers.
+On suit l'arborescence conseillée (`langage/gabarits/arborescence.md` dans le dépôt du cours), à la racine de notre dépôt : **un module par étape, un fichier de test par étape**. C'est ce qui permet de travailler à 4 sans conflits Git : chacun a _ses_ fichiers.
 
 ```
-projet/
+Alto/
 ├── specification.md
-├── exemples/                    # 5+ programmes .xyz + leur sortie .attendu
-├── monlangage/
+├── exemples/                    # 5+ programmes .alt + leur sortie .attendu
+├── alto/
 │   ├── __init__.py
 │   ├── __main__.py              # Alexandra
 │   ├── erreurs.py               # Alexandra (les autres ajoutent leur classe d'erreur)
@@ -98,7 +100,7 @@ projet/
 │   ├── backend.py               # Fatoumata
 │   └── formateur.py             # Fatoumata
 └── tests/
-    ├── conftest.py              # copie de gabarits/conftest_modele.py
+    ├── conftest.py              # déjà en place : rend `alto` importable
     ├── test_etape_02_tokens.py
     ├── test_etape_03_lexer.py
     └── ...
@@ -112,13 +114,13 @@ projet/
 
 Normalement chaque étape dépend de la précédente (le parser a besoin des tokens, le générateur a besoin de l'arbre…). Pour **travailler tous en même temps**, on fixe dès la réunion 0 les **interfaces** entre les maillons. Ensuite chacun code son morceau en parallèle.
 
-| Contrat | Défini par | Utilisé par | Contenu à fixer le jour 1 |
-|---|---|---|---|
-| **Liste des tokens** (`TokenKind`) | Alexandra | Fatoumata | le nom de chaque mot-clé et symbole (`SI`, `SINON`, `PLUS`, `ACCOLADE_G`…) |
-| **`Token` et `Position`** | Alexandra | tout le monde | `Token(kind, lexeme, position)`, `Position(ligne, colonne)` |
-| **Liste des nœuds de l'AST** (`noeuds.py`) | Luca | Fatoumata, Luca, Arthur | un nœud par construction : `Entier`, `Variable`, `Binaire`, `Si`, `Fonction`… avec leurs champs |
-| **Hiérarchie d'erreurs** | Alexandra | tout le monde | `ErreurMonlangage` → `ErreurLexicale`, `ErreurSyntaxe`, `ErreurSemantique`, `ErreursMultiples`, `ErreurExecution` |
-| **Points d'entrée** | — | Alexandra (CLI) | `tokenize(source)`, `parse(source)`, `analyser(programme)`, `generer(programme, analyse)` |
+| Contrat                                    | Défini par | Utilisé par             | Contenu à fixer le jour 1                                                                                         |
+| ------------------------------------------ | ---------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Liste des tokens** (`TokenKind`)         | Alexandra  | Fatoumata               | le nom de chaque mot-clé et symbole (`SI`, `SINON`, `PLUS`, `ACC_G`…) — proposition dans `guide/02_tokens.md`                                        |
+| **`Token` et `Position`**                  | Alexandra  | tout le monde           | `Token(kind, lexeme, position)`, `Position(ligne, colonne)`                                                       |
+| **Liste des nœuds de l'AST** (`noeuds.py`) | Luca       | Fatoumata, Luca, Arthur | un nœud par construction : `Entier`, `Variable`, `Binaire`, `Si`, `Fonction`… avec leurs champs — proposition dans `guide/04_ast.md` |
+| **Hiérarchie d'erreurs**                   | Alexandra  | tout le monde           | `ErreurAlto` → `ErreurLexicale`, `ErreurSyntaxe`, `ErreurSemantique`, `ErreursMultiples`, `ErreurExecution` |
+| **Points d'entrée**                        | —          | Alexandra (CLI)         | `tokenize(source)`, `parse(source)`, `analyser(programme)`, `transpiler(source)`, `executer(source)`                         |
 
 👉 **Premier PR à faire (jour 1)** : Alexandra pousse `tokens.py` + `erreurs.py` en version « squelette » et Luca pousse `noeuds.py` en squelette (juste les dataclasses, sans `afficher_arbre`). **Dès que ces deux PR sont fusionnées, tout le monde peut coder.**
 
@@ -132,15 +134,15 @@ En attendant le vrai lexer/parser, chacun peut **construire ses tokens ou ses n�
 
 C'est la seule étape qu'on fait à quatre, car **tout le reste en dépend** et l'enseignant doit la valider avant qu'on code.
 
-- [ ] Choisir **le nom** du langage, **l'extension** des fichiers, l'**idée directrice** (mots-clés en français ? accolades ou indentation ?).
-- [ ] Écrire les **5 programmes d'exemple** d'abord (comme si le langage existait), puis en déduire la grammaire. Un chacun + un ensemble :
+- [x] Choisir **le nom** du langage, **l'extension** des fichiers, l'**idée directrice** : **Alto**, `.alt`, mots-clés en français, accolades.
+- [ ] **Relire** les 5 programmes d'exemple déjà proposés dans `exemples/` (et les modifier si besoin). Un chacun + un ensemble :
   - Alexandra : `01_bonjour` (affichage, textes)
   - Luca : `02_factorielle` (fonctions, récursion)
   - Fatoumata : `03_fizzbuzz` (conditions, boucles, opérateurs)
   - Arthur : `04_listes` (listes / indices, si on en a)
   - Ensemble : `05_...` (un programme qui mélange tout)
-  - Pour chacun, écrire **à la main** le fichier `.attendu` (la sortie exacte).
-- [ ] Remplir `projet/specification.md` à partir du gabarit [`gabarits/specification.md`](gabarits/specification.md) : lexique, grammaire EBNF, table des priorités, sémantique (portées, fonctions), cas limites (bloc vide, boucle de 0 tour…).
+  - Pour chacun, vérifier **à la main** le fichier `.attendu` (la sortie exacte).
+- [ ] Relire et compléter le brouillon [`specification.md`](specification.md) (voir [`guide/01_specification.md`](guide/01_specification.md)) : lexique, grammaire EBNF, table des priorités, sémantique (portées, fonctions), cas limites (bloc vide, boucle de 0 tour…).
 - [ ] Fixer les **contrats** de la section 3 (liste des tokens, liste des nœuds).
 - [ ] **Faire valider la spécification par l'enseignant.**
 
@@ -148,7 +150,7 @@ C'est la seule étape qu'on fait à quatre, car **tout le reste en dépend** et 
 
 #### 🟣 Alexandra — Tokens, Lexer, Erreurs (étapes 2 et 3)
 
-- [ ] **Jour 1** : squelette de `erreurs.py` (`Position`, `ErreurMonlangage` et toutes les sous-classes vides) et `tokens.py` (`TokenKind` complet, `Token`) → **PR en priorité**, les autres en ont besoin.
+- [ ] **Jour 1** : squelette de `erreurs.py` (`Position`, `ErreurAlto` et toutes les sous-classes vides) et `tokens.py` (`TokenKind` complet, `Token`) → **PR en priorité**, les autres en ont besoin.
 - [ ] `tokens.py` : dictionnaire des mots-clés et liste des symboles **construits à partir de l'Enum**, triés du plus long au plus court ; `__str__` de `TokenKind` (`';'`, `<identifiant>`).
 - [ ] `lexer.py` : générateur `tokenize(source) -> Iterator[Token]` (blancs, commentaires, nombres, textes avec échappements, identifiants, mots-clés, symboles, ligne/colonne, token `FIN` à la fin).
 - [ ] `ErreurLexicale` sur caractère inconnu, texte non terminé, échappement invalide.
@@ -162,7 +164,7 @@ C'est la seule étape qu'on fait à quatre, car **tout le reste en dépend** et 
 - [ ] `afficher_arbre(noeud) -> str` générique (sans une ligne par type de nœud — utiliser `dataclasses.fields`).
 - [ ] Tests : `test_etape_04_ast.py`.
 - [ ] `symboles.py` : pile de portées, `portee()` en `@contextmanager`, `declarer()`, `chercher()`.
-- [ ] `semantique.py` : visiteur `Analyseur` avec `singledispatchmethod` (une méthode par nœud). Vérifier : variable déclarée avant usage, pas de double déclaration, règles des fonctions (nb d'arguments, `retourne` hors fonction), fonctions prédéfinies protégées.
+- [ ] `semantique.py` : visiteur `Analyseur` avec `singledispatchmethod` (une méthode par nœud). Vérifier : variable déclarée avant usage, pas de double déclaration, règles des fonctions (nb d'arguments, `rends` hors fonction), fonctions prédéfinies protégées.
 - [ ] Collecter **toutes** les erreurs → une seule `ErreursMultiples` ; renvoyer un objet `Analyse` utile au générateur (se mettre d'accord avec Arthur sur son contenu, ex. globales modifiées par fonction).
 - [ ] Tests : `test_etape_07_semantique.py` (on peut construire les arbres à la main sans attendre le parser).
 
@@ -184,19 +186,20 @@ C'est la seule étape qu'on fait à quatre, car **tout le reste en dépend** et 
 - [ ] `emetteur.py` : classe `Emetteur` avec `ligne(texte)`, `bloc()` en context manager (indente, ajoute `pass` si vide), `texte()`.
 - [ ] `generateur.py` : traduction de chaque nœud avec `match` / `case` et `assert_never`. On peut commencer **avant le parser** en construisant les arbres à la main.
 - [ ] Faire la liste des « pièges » de traduction propres à **notre** langage (portée de bloc vs Python, noms qui sont des mots-clés Python comme `list` ou `class`, division entière, comparaisons chaînées, `global`…) et les régler.
-- [ ] `transpiler(source) -> str` + exécution via `exec(compile(code, "<monlangage>", "exec"), {"__name__": "__main__"})`.
+- [ ] `transpiler(source) -> str` + exécution via `exec(compile(code, "<alto>", "exec"), {"__name__": "__main__"})`.
 - [ ] **Le test central** `test_etape_08_generation.py` : pour chaque fichier de `exemples/`, transpiler, exécuter, capturer la sortie, comparer au `.attendu`. C'est **le test le plus important du projet**.
-- [ ] Mettre en place l'outillage pour tout le monde : `pyproject.toml` (pytest, mypy strict, ruff) et, si possible, une **GitHub Action** qui lance `pytest` + `ruff` sur chaque PR.
+- [x] Outillage : `pyproject.toml` (pytest, mypy strict, ruff) — déjà en place.
+- [ ] Si possible, une **GitHub Action** qui lance `pytest` + `ruff` sur chaque PR.
 
 ### Phase 2 — finitions (quand la chaîne marche de bout en bout)
 
-| Qui | Tâche |
-|---|---|
+| Qui              | Tâche                                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 🟣 **Alexandra** | **Étape 9** : `compilateur.py` (façade `compiler` / `transpiler` / `executer`), `ErreurExecution` ramenée à la ligne source, `cli.py` (`run`, `transpile [-o]`, `check`, `repl`), codes de retour, fichier introuvable propre, `__main__.py`, `repl.py` (générateur avec `send`, garde l'état, survit aux erreurs, attend la suite si bloc non fermé). Tests `test_etape_09_cli_repl.py`. |
-| 🟢 **Fatoumata** | **Étape 10** : `backend.py` (`Protocol Backend`, dataclass `Sortie`, dict `BACKENDS`), option `--backend`, `formateur.py` (réécrit notre langage proprement, parenthèses minimales), sous-commande `fmt`. Tests `test_etape_10_qualite.py`. |
-| 🟠 **Arthur** | **`mypy --strict`** sur tout le paquet (chacun corrige ses fichiers, Arthur coordonne) puis **extension 11** (`generateur_ast.py` avec le module `ast`). |
-| 🔵 **Luca** | **Extension 12** : typage statique (`typage.py`, `ErreurType`, annotations dans la spec, le lexer et le parser). |
-| Le premier libre | **Extension 13** : source maps (`sourcemap.py`). |
+| 🟢 **Fatoumata** | **Étape 10** : `backend.py` (`Protocol Backend`, dataclass `Sortie`, dict `BACKENDS`), option `--backend`, `formateur.py` (réécrit notre langage proprement, parenthèses minimales), sous-commande `fmt`. Tests `test_etape_10_qualite.py`.                                                                                                                                               |
+| 🟠 **Arthur**    | **`mypy --strict`** sur tout le paquet (chacun corrige ses fichiers, Arthur coordonne) puis **extension 11** (`generateur_ast.py` avec le module `ast`).                                                                                                                                                                                                                                  |
+| 🔵 **Luca**      | **Extension 12** : typage statique (`typage.py`, `ErreurType`, annotations dans la spec, le lexer et le parser).                                                                                                                                                                                                                                                                          |
+| Le premier libre | **Extension 13** : source maps (`sourcemap.py`).                                                                                                                                                                                                                                                                                                                                          |
 
 ---
 
@@ -220,29 +223,17 @@ Réunion 0 (tous) : spec + exemples + contrats
 
 ## 6. Travailler ensemble sur GitHub
 
-### Mise en place (une seule personne, ex. Fatoumata)
+### Mise en place (une seule personne)
 
-1. Créer le dépôt sur GitHub et ajouter Alexandra, Luca et Arthur comme collaborateurs (*Settings → Collaborators*).
-2. Pousser le contenu actuel :
-
-```bash
-cd /Users/mac/Desktop/langage
-git init
-git add .
-git commit -m "Sujet du projet et organisation de l'équipe"
-git branch -M main
-git remote add origin https://github.com/<compte>/<depot>.git
-git push -u origin main
-```
-
-3. Protéger `main` (*Settings → Branches → Add rule*) : PR obligatoire, 1 relecture minimum.
-4. Créer un **ticket (Issue) par case à cocher** de la section 4, assigné à la bonne personne, et un tableau **Projects** (À faire / En cours / En relecture / Fini).
+1. ✅ Le dépôt existe : https://github.com/aassaga21/Alto. Vérifier qu'Alexandra, Luca, Fatoumata et Arthur sont collaborateurs (_Settings → Collaborators_).
+2. Protéger `main` (_Settings → Branches → Add rule_) : PR obligatoire, 1 relecture minimum.
+3. Créer un **ticket (Issue) par case à cocher** de la section 4, assigné à la bonne personne, et un tableau **Projects** (À faire / En cours / En relecture / Fini).
 
 ### Les autres membres
 
 ```bash
-git clone https://github.com/<compte>/<depot>.git
-cd <depot>
+git clone https://github.com/aassaga21/Alto.git
+cd Alto
 ```
 
 ### Le cycle de travail (pour chaque tâche)
@@ -252,9 +243,9 @@ git switch main
 git pull                                   # récupérer le travail des autres
 git switch -c alexandra/lexer              # une branche par tâche : prenom/sujet
 # ... coder + écrire les tests ...
-uv run pytest projet                       # les tests passent ?
-uv run ruff check projet                   # le style est bon ?
-git add projet/monlangage/lexer.py projet/tests/test_etape_03_lexer.py
+uv run pytest                              # les tests passent ?
+uv run ruff check .                        # le style est bon ?
+git add alto/lexer.py tests/test_etape_03_lexer.py
 git commit -m "Lexer : nombres, identifiants et mots-clés"
 git push -u origin alexandra/lexer
 ```
@@ -274,18 +265,20 @@ Puis sur GitHub : **ouvrir une Pull Request**, demander une relecture à un autr
 
 ### Point quotidien (5 minutes)
 
-Chacun répond à : *qu'est-ce que j'ai fini ? qu'est-ce que je fais aujourd'hui ? est-ce que je suis bloqué(e) par quelqu'un ?* Le rendu est quotidien (voir `docs/rendu.md`), donc on fusionne ce qui marche chaque soir.
+Chacun répond à : _qu'est-ce que j'ai fini ? qu'est-ce que je fais aujourd'hui ? est-ce que je suis bloqué(e) par quelqu'un ?_ Le rendu est quotidien (voir `docs/rendu.md` dans le dépôt du cours), donc on fusionne ce qui marche chaque soir.
 
 ---
 
 ## 7. Commandes utiles
 
 ```bash
-uv run pytest projet                 # tous les tests
-uv run pytest projet -k etape_05     # les tests d'une étape
-uv run mypy projet/monlangage        # typage strict
-uv run ruff check projet             # style
-uv run ruff format projet            # mise en forme automatique
-cd projet && uv run python -m monlangage run exemples/01_bonjour.xyz
-cd projet && uv run python -m monlangage transpile exemples/01_bonjour.xyz
+uv run pytest                        # tous les tests
+uv run pytest -k etape_05            # les tests d'une étape
+uv run mypy alto                     # typage strict
+uv run ruff check .                  # style
+uv run ruff format .                 # mise en forme automatique
+uv run python -m alto run exemples/01_bonjour.alt
+uv run python -m alto transpile exemples/01_bonjour.alt
 ```
+
+merciiii

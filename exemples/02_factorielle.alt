@@ -1,0 +1,20 @@
+# Fonctions, récursion et boucle pour (bornes incluses).
+fonction factorielle(n) {
+    si n <= 1 {
+        rends 1;
+    }
+    rends n * factorielle(n - 1);
+}
+
+fonction factorielle_boucle(n) {
+    var resultat = 1;
+    pour i de 2 jusqua n {
+        resultat = resultat * i;
+    }
+    rends resultat;
+}
+
+pour k de 0 jusqua 5 {
+    ecris k, factorielle(k), factorielle_boucle(k);
+}
+ecris factorielle(20);

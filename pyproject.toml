@@ -1,0 +1,20 @@
+[project]
+name = "alto"
+version = "0.1.0"
+description = "Alto : un petit langage aux mots-clés français, transpilé en Python"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

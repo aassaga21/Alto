@@ -1,0 +1,18 @@
+# si / sinon si / sinon, modulo, comparaisons et logique.
+fonction fizzbuzz(n) {
+    si n % 15 == 0 {
+        rends "FizzBuzz";
+    } sinon si n % 3 == 0 {
+        rends "Fizz";
+    } sinon si n % 5 == 0 {
+        rends "Buzz";
+    } sinon {
+        rends texte(n);
+    }
+}
+
+pour i de 1 jusqua 15 {
+    ecris fizzbuzz(i);
+}
+ecris non (vrai et faux) ou faux;
+ecris 1 < 2, 2 != 2, 3 >= 3;

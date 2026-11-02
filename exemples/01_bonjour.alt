@@ -1,0 +1,9 @@
+# Variables, textes, affichage et calculs.
+var nom = "Alto";
+var version = 1.0;
+ecris "Bonjour, " + nom + " !";
+ecris "version", version;
+var actif = vrai;
+ecris "actif :", actif, "valeur :", rien;
+ecris 7 / 2, 7 % 2, -3 * (2 + 1);
+ecris "Elle a dit \"oui\".";
