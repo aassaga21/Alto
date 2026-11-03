@@ -32,6 +32,14 @@ uv --version
 
 Sur Windows, dans PowerShell : `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`.
 
+> **Windows : « uv n'est pas reconnu » alors que l'installation a réussi ?** L'installateur ajoute uv au PATH, mais les terminaux déjà ouverts (et ceux de VS Code) gardent l'ancien PATH. Fermer seulement le terminal ne suffit pas : ferme **toutes** les fenêtres VS Code, vérifie dans le Gestionnaire des tâches qu'il ne reste aucun `Code.exe`, puis rouvre VS Code. Si ça ne marche toujours pas, **redémarre le PC**.
+>
+> Pour dépanner tout de suite, dans le terminal ouvert (valable seulement pour ce terminal) :
+>
+> ```powershell
+> $env:Path = "$env:USERPROFILE\.local\bin;$env:Path"
+> ```
+
 > **Pourquoi uv ?** Le projet utilise Python **3.12** (pour la syntaxe `type Expr = ...` et `class Flux[T]`). uv télécharge tout seul la bonne version de Python, et installe pytest, mypy et ruff, sans toucher au Python de ton ordinateur.
 
 ## 2. Récupérer le dépôt
@@ -117,7 +125,7 @@ Alto/
 
 > Dans les énoncés du cours, `monlangage` désigne le paquet Python : **chez nous, c'est `alto`**. Et `projet/` désigne la racine de notre dépôt.
 >
-> ⚠️ Ne crée jamais de fichier nommé `ast.py`, `token.py`, `types.py` ou `tokenize.py` : ces noms existent déjà dans Python, et le tien prendrait leur place.
+> Ne crée jamais de fichier nommé `ast.py`, `token.py`, `types.py` ou `tokenize.py` : ces noms existent déjà dans Python, et le tien prendrait leur place.
 
 ## 5. Comment un test pytest fonctionne (rappel rapide)
 
@@ -177,6 +185,7 @@ Le détail du travail en équipe sur GitHub est dans [`../ORGANISATION.md`](../O
 | Problème | Solution |
 |---|---|
 | `uv: command not found` | ferme et rouvre le terminal ; sinon relance l'installation de uv |
+| Windows : `uv : Le terme «uv» n'est pas reconnu…` | ferme complètement VS Code (aucun `Code.exe` dans le Gestionnaire des tâches) ou redémarre le PC : voir l'encadré de la section 1 |
 | `ModuleNotFoundError: No module named 'alto'` | lance les commandes **depuis le dossier `Alto`**, et vérifie que `tests/conftest.py` existe |
 | `SyntaxError` sur `type Expr = ...` ou `class Flux[T]` | tu n'utilises pas Python 3.12 : passe par `uv run` |
 | `git push` refusé | fais `git pull` d'abord ; vérifie que tu es bien collaborateur du dépôt sur GitHub |
