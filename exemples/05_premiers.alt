@@ -1,0 +1,35 @@
+# Nombres premiers : tantque imbriqués, booléens, fonction sans paramètre.
+fonction est_premier(n) {
+    si n < 2 {
+        rends faux;
+    }
+    var d = 2;
+    tantque d * d <= n {
+        si n % d == 0 {
+            rends faux;
+        }
+        d = d + 1;
+    }
+    rends vrai;
+}
+
+fonction separateur() {
+    ecris "----------";
+}
+
+var premiers = [];
+var candidat = 0;
+tantque taille(premiers) < 10 {
+    si est_premier(candidat) {
+        ajoute(premiers, candidat);
+    }
+    candidat = candidat + 1;
+}
+ecris premiers;
+separateur();
+var total = 0;
+pour i de 0 jusqua taille(premiers) - 1 {
+    total = total + premiers[i];
+}
+ecris "somme :", total, "moyenne :", total / taille(premiers);
+ecris "le dixième :", premiers[9];

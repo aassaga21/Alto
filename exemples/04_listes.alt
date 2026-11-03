@@ -1,0 +1,23 @@
+# Listes, indices, fonctions prédéfinies et variable globale modifiée.
+var appels = 0;
+
+fonction somme(valeurs) {
+    appels = appels + 1;
+    var total = 0;
+    var i = 0;
+    tantque i < taille(valeurs) {
+        total = total + valeurs[i];
+        i = i + 1;
+    }
+    rends total;
+}
+
+var carres = [];
+pour i de 1 jusqua 5 {
+    ajoute(carres, i * i);
+}
+ecris carres, taille(carres);
+carres[0] = 100;
+ecris carres[0], carres[taille(carres) - 1];
+ecris somme(carres), somme([1, 2, 3]), "appels :", appels;
+ecris [vrai, rien, "a", [1.5]];
