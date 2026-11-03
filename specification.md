@@ -1,7 +1,7 @@
 # Spécification d'Alto
 
-> **BROUILLON à relire ensemble (réunion 0), puis à faire valider par l'enseignant.**
-> Tout peut changer : les mots-clés, les règles, les fonctions prédéfinies. Si vous changez quelque chose ici, mettez aussi à jour les programmes de `exemples/` et leurs fichiers `.attendu`.
+> **Version 1.0, adoptée par l'équipe (Alexandra, Luca, Fatoumata, Arthur) le 3 novembre 2026. En attente de validation par l'enseignant.**
+> Toute modification passe par une PR qui met aussi à jour les programmes de `exemples/` et leurs fichiers `.attendu`, et doit être annoncée à toute l'équipe.
 
 ## Identité
 
@@ -37,16 +37,20 @@ si total == factorielle(5) {
 
 ## Lexique
 
+- **Encodage** : le source est lu en UTF-8.
 - **Blancs et sauts de ligne** : ignorés. La mise en forme est libre ; une instruction simple se termine par `;`.
 - **Commentaires** : de `#` jusqu'à la fin de la ligne.
-- **Entiers** : chiffres ASCII, `0`, `42`. Pas de signe : `-3` est le `-` unaire appliqué à `3`.
-- **Décimaux** : `3.14`. Il faut au moins un chiffre de chaque côté du point : `1.` et `.5` sont refusés (`1.` donne l'entier `1` suivi d'un caractère inattendu `.`).
-- **Textes** : entre guillemets `"..."`, sur une seule ligne. Échappements permis : `\n` (saut de ligne), `\t` (tabulation), `\"` (guillemet), `\\` (barre oblique). Tout autre échappement est une erreur.
-- **Identifiants** : une lettre (accents permis), puis des lettres, chiffres ou `_`. Un identifiant **ne commence pas par `_`** : ce préfixe est réservé au code Python généré.
+- **Entiers** : chiffres ASCII, `0`, `42`. Pas de signe : `-3` est le `-` unaire appliqué à `3`. Les zéros en tête sont permis (`007` vaut `7`). Pas de limite de taille.
+- **Décimaux** : `3.14`. Il faut au moins un chiffre de chaque côté du point : `1.` et `.5` sont refusés (`1.` donne l'entier `1` suivi d'un caractère inattendu `.`). Pas de notation scientifique (`1e5`).
+- **Textes** : entre guillemets `"..."`, sur une seule ligne. Échappements permis : `\n` (saut de ligne), `\t` (tabulation), `\"` (guillemet), `\\` (barre oblique). Tout autre échappement est une erreur. Un texte qui atteint la fin de la ligne ou du fichier sans guillemet fermant est une erreur (« texte non terminé »). Le texte vide `""` est permis.
+- **Identifiants** : une lettre (au sens d'Unicode, accents permis), puis des lettres, chiffres ou `_`. Un identifiant **ne commence pas par `_`** : ce préfixe est réservé au code Python généré.
+- **Casse** : Alto distingue majuscules et minuscules. `Si` ou `VAR` sont des identifiants, pas des mots-clés.
 - **Mots-clés** (réservés, ne peuvent pas servir de nom) : `var fonction rends si sinon tantque pour de jusqua ecris vrai faux rien et ou non`.
 - **Symboles** : `( ) { } [ ] , ; = == != < <= > >= + - * / %`.
 
-Les jetons qui se ressemblent : `=` (affectation) et `==` (égalité), `<` et `<=`, `>` et `>=`. Le lexer essaie toujours le symbole le plus long d'abord.
+Les jetons qui se ressemblent : `=` (affectation) et `==` (égalité), `<` et `<=`, `>` et `>=`. Le lexer essaie toujours le symbole le plus long d'abord. Un `!` seul est un caractère inattendu.
+
+Tout autre caractère hors d'un texte ou d'un commentaire (`@`, `$`, `'`, `.`…) est une erreur lexicale.
 
 ## Grammaire (EBNF)
 
@@ -82,6 +86,12 @@ primaire      = ENTIER | DECIMAL | TEXTE | "vrai" | "faux" | "rien" | IDENT
               | "(" expression ")" | "[" [ arguments ] "]" ;
 ```
 
+Précisions :
+
+- Le parser distingue `affectation` et `expression ";"` en lisant d'abord une expression : si elle est suivie de `=`, c'est une affectation, et l'expression lue doit être une **cible valide** (un identifiant ou un indice). Sinon, `1 = 2;` ou `f() = 3;` sont des erreurs de syntaxe.
+- Pas de virgule finale : `[1, 2,]` et `f(a,)` sont refusés.
+- Un programme vide (ou ne contenant que des commentaires) est valide et n'affiche rien.
+
 ## Priorité et associativité des opérateurs
 
 Du moins prioritaire au plus prioritaire :
@@ -99,39 +109,129 @@ Du moins prioritaire au plus prioritaire :
 
 Points particuliers :
 
-- **Pas de comparaison chaînée** : `a < b < c` se lit `(a < b) < c`, et non comme en Python.
+- **Pas de comparaison chaînée** : `a < b < c` se lit `(a < b) < c`, et non comme en Python. Le générateur ajoute les parenthèses.
 - `-a * b` se lit `(-a) * b`, mais `non a == b` se lit `non (a == b)`.
-- Seule une fonction **nommée** peut être appelée : `f(1)` est valide, `f(1)(2)` ne l'est pas.
+- `- - 3` est permis et vaut `3` ; `non non vrai` vaut `vrai`.
+- Seule une fonction **nommée** peut être appelée : `f(1)` est valide, `f(1)(2)` ou `t[0](1)` ne le sont pas (erreur sémantique).
 
 ## Sémantique
 
-- **Variables.** On les déclare avec `var` avant de les utiliser. `var x = x;` est refusé (le `x` de droite n'existe pas encore).
+### Valeurs
+
+Alto manipule six sortes de valeurs : les **entiers** (sans limite de taille), les **décimaux**, les **textes**, les **booléens** (`vrai`, `faux`), les **listes** et l'absence de valeur **`rien`**. Les types ne sont pas déclarés ; ils sont vérifiés à l'exécution.
+
+### Variables et portées
+
+- **Déclaration.** On déclare une variable avec `var` avant de l'utiliser, et elle reçoit toujours une valeur initiale. `var x = x;` est refusé (le `x` de droite n'existe pas encore).
+- **Affectation.** `x = 3;` n'est permis que si `x` est une variable ou un paramètre visible. On ne peut pas affecter une fonction ni une fonction prédéfinie.
 - **Blocs et portées.** Chaque bloc `{ }` ouvre une portée : une variable déclarée dans un bloc n'existe plus après lui. Deux blocs voisins peuvent déclarer chacun une variable du même nom.
-- **Pas de masquage.** On ne peut pas déclarer un nom déjà visible (variable, paramètre, fonction ou fonction prédéfinie), même dans un bloc intérieur. *Raison : Python n'a pas de portée de bloc ; sans cette règle, le code généré changerait de sens.*
-- **Fonctions.** Elles se déclarent **au niveau global** (pas dans un bloc), avant leur premier appel. Une fonction peut s'appeler elle-même (récursion). Elle voit les variables globales déclarées **avant** elle, peut les lire et les modifier. Le nombre d'arguments est vérifié à la compilation. Une fonction sans `rends` (ou avec `rends;`) renvoie `rien`.
-- **`rends`** n'est permis qu'à l'intérieur d'une fonction.
-- **`pour i de a jusqua b`** parcourt `a, a+1, …, b` : **les deux bornes sont incluses**. Si `a > b`, la boucle ne fait aucun tour. La variable `i` n'existe que dans la boucle.
-- **`tantque c { ... }`** répète le bloc tant que `c` est vrai.
-- **Affichage.** `ecris` affiche ses valeurs séparées par une espace, puis passe à la ligne. Les booléens s'affichent `vrai` / `faux`, l'absence de valeur `rien`, les listes `[1, 2, 3]` (leurs éléments suivent les mêmes règles), les textes sans guillemets.
-- **Arithmétique.** `/` donne toujours un décimal (`7 / 2` vaut `3.5`, `4 / 2` vaut `2.0`). `%` est le reste (convention de Python). `+` additionne des nombres, ou colle deux textes, ou deux listes.
-- **Logique.** `et`, `ou`, `non` s'appliquent à des booléens.
-- **Listes.** `[1, 2, 3]`, indices à partir de 0 : `l[0]`. On peut affecter un élément : `l[0] = 5;`. Les textes s'indexent aussi : `"abc"[0]` vaut `"a"`.
-- **Fonctions prédéfinies** (leurs noms sont réservés) :
+- **Pas de masquage.** On ne peut pas déclarer un nom déjà visible (variable, paramètre, fonction ou fonction prédéfinie), même dans un bloc intérieur. Deux paramètres d'une même fonction ne peuvent pas avoir le même nom. *Raison : Python n'a pas de portée de bloc ; sans cette règle, le code généré changerait de sens.*
+- **Noms Python.** Un nom Alto peut coïncider avec un mot réservé ou une fonction de Python (`print`, `list`, `class`, `None`…) : c'est permis, le générateur le renomme.
+
+### Fonctions
+
+- Elles se déclarent **au niveau global** (pas dans un bloc, même pas dans un `si`), **avant leur premier appel**. Deux fonctions ne peuvent pas porter le même nom.
+- Une fonction peut s'appeler elle-même (récursion). Comme une fonction doit être déclarée avant d'être appelée, deux fonctions ne peuvent pas s'appeler mutuellement.
+- Elle voit les variables globales déclarées **avant** elle, peut les lire et les modifier. Elle ne voit pas celles déclarées après.
+- Une fonction peut ne pas avoir de paramètre : `fonction f() { }`.
+- Le nombre d'arguments est vérifié à la compilation.
+- Les arguments sont évalués de gauche à droite, avant l'appel. Une liste passée en argument est **partagée** : si la fonction la modifie (`ajoute`, `l[0] = …`), l'appelant voit la modification.
+- Une fonction sans `rends` (ou avec `rends;`) renvoie `rien`.
+- **`rends`** n'est permis qu'à l'intérieur d'une fonction ; il termine immédiatement la fonction, même au milieu d'une boucle.
+- Une variable ne peut pas être appelée (`var x = 1; x();`), et une fonction ne peut pas être utilisée comme une valeur (`ecris f;`, `var g = f;`).
+
+### Structures de contrôle
+
+- **`si … sinon si … sinon`** : les conditions sont évaluées dans l'ordre ; seul le bloc de la première condition vraie s'exécute. Sans condition vraie, c'est le bloc `sinon` s'il existe.
+- **`tantque c { ... }`** : répète le bloc tant que `c` est vrai. Si `c` est faux dès le départ, le bloc ne s'exécute pas.
+- **`pour i de a jusqua b`** parcourt `a, a+1, …, b` : **les deux bornes sont incluses**. Si `a > b`, la boucle ne fait aucun tour.
+  - `a` et `b` sont évalués **une seule fois**, avant le premier tour, et doivent être des entiers (sinon, erreur d'exécution).
+  - La variable `i` est déclarée par la boucle : elle n'existe que dans la boucle et ne doit pas déjà être visible (pas de masquage). Deux boucles `pour i` l'une après l'autre sont permises.
+  - Modifier `i` dans le corps est permis, mais ne change pas le tour suivant : `i` reprend la valeur prévue au début de chaque tour.
+- **Conditions.** Les conditions de `si` et `tantque` sont prévues pour être des booléens. Ce n'est pas vérifié à la compilation ; à l'exécution, une autre valeur suit la règle de Python : `0`, `0.0`, `""`, `[]` et `rien` comptent comme faux, tout le reste comme vrai.
+- **Blocs vides.** Un bloc vide `{ }` est permis partout (`si vrai { }`, `fonction f() { }`).
+
+### Affichage
+
+`ecris` affiche ses valeurs séparées par une espace, puis passe à la ligne. Chaque valeur s'affiche ainsi :
+
+| Valeur | Affichage |
+|---|---|
+| entier | `42`, `-9`, `2432902008176640000` |
+| décimal | comme Python : `3.5`, `1.0`, `12.9` |
+| texte | sans guillemets : `Bonjour` |
+| booléen | `vrai` / `faux` |
+| `rien` | `rien` |
+| liste | `[1, 2, 3]` : les éléments suivent les mêmes règles (`[vrai, rien, a, [1.5]]`) |
+
+Les valeurs d'un `ecris` sont évaluées de gauche à droite, puis affichées toutes ensemble.
+
+### Opérations
+
+- **Arithmétique.** `+ - * %` sur deux entiers donnent un entier ; si l'un des deux est décimal, le résultat est décimal. `/` donne toujours un décimal (`7 / 2` vaut `3.5`, `4 / 2` vaut `2.0`). `%` est le reste (convention de Python : `-7 % 3` vaut `2`). Pas de division entière.
+- **Textes et listes.** `+` colle deux textes, ou deux listes (le résultat est une nouvelle liste). Coller un texte et un nombre est une erreur : on écrit `"n = " + texte(n)`.
+- **Comparaisons.** `==` et `!=` comparent deux valeurs de n'importe quel type (`1 == "1"` vaut `faux`, `1 == 1.0` vaut `vrai`). `< <= > >=` comparent deux nombres, ou deux textes (ordre alphabétique de Python).
+- **Logique.** `et`, `ou`, `non` s'appliquent à des booléens. `et` et `ou` sont **court-circuités** : dans `a et b`, `b` n'est pas évalué si `a` est faux ; dans `a ou b`, `b` n'est pas évalué si `a` est vrai.
+- **Listes.** `[1, 2, 3]`, `[]`. Les indices commencent à 0 : `l[0]`. Un indice négatif compte depuis la fin, comme en Python : `l[-1]` est le dernier élément. On peut affecter un élément existant : `l[0] = 5;`. Les textes s'indexent aussi (`"abc"[0]` vaut `"a"`) mais ne se modifient pas.
+
+### Fonctions prédéfinies
+
+Leurs noms sont réservés : on ne peut ni les redéclarer, ni les affecter.
 
 | Fonction | Rôle |
 |---|---|
 | `taille(x)` | le nombre d'éléments d'une liste ou de caractères d'un texte |
-| `ajoute(liste, x)` | ajoute `x` à la fin de la liste |
-| `texte(x)` | convertit une valeur en texte (`texte(vrai)` vaut `"vrai"`) |
+| `ajoute(liste, x)` | ajoute `x` à la fin de la liste, et renvoie `rien` |
+| `texte(x)` | convertit une valeur en texte, selon les règles d'affichage (`texte(vrai)` vaut `"vrai"`, `texte([1, 2])` vaut `"[1, 2]"`) |
 
-- **Erreurs d'exécution** (division par zéro, indice hors limites, opération impossible comme `1 + "a"`) : le programme s'arrête et affiche un message qui désigne **la ligne Alto** fautive, sans traceback Python.
+### Erreurs
+
+Le compilateur s'arrête à la première erreur lexicale. Le parser et l'analyse sémantique, eux, **signalent toutes leurs erreurs** avant de s'arrêter. Chaque erreur s'affiche ainsi, suivie de la ligne fautive et d'un `^` sous la colonne :
+
+```
+fichier.alt:ligne:colonne : genre : message
+```
+
+| Genre | Exemples |
+|---|---|
+| `erreur lexicale` | caractère inattendu `@`, texte non terminé, échappement invalide `\q` |
+| `erreur de syntaxe` | `;` oublié (signalé juste après le token précédent), `}` manquant, cible d'affectation invalide |
+| `erreur sémantique` | variable non déclarée, double déclaration, masquage, `rends` hors fonction, mauvais nombre d'arguments, fonction déclarée dans un bloc |
+| `erreur d'exécution` | division (ou `%`) par zéro, indice hors limites, opération impossible comme `1 + "a"`, bornes de `pour` non entières |
+
+Une erreur d'exécution arrête le programme et affiche un message qui désigne **la ligne Alto** fautive, sans traceback Python. Ce qui a été affiché avant l'erreur reste affiché.
+
+## Cas limites décidés
+
+| Question | Décision |
+|---|---|
+| Bloc vide `si vrai { }` | permis |
+| `pour i de 5 jusqua 1 { … }` | 0 tour |
+| `pour i de 1 jusqua 1 { … }` | 1 tour |
+| Fonction sans paramètre `fonction f() { }` | permise (voir `05_premiers.alt`) |
+| Texte vide `""` | permis |
+| Variable nommée `sinon_si`, `variable`, `Si` | permise (ce ne sont pas des mots-clés) |
+| Variable nommée `print`, `list`, `class` | permise, renommée par le générateur |
+| Identifiant commençant par `_` | refusé (erreur lexicale) |
+| `var x = x;` | refusé (erreur sémantique) |
+| `ecris;` sans valeur | refusé (erreur de syntaxe) ; pour une ligne vide, `ecris "";` |
+| Instruction qui n'est qu'une expression, comme `1 + 2;` | permise, sans effet |
+| `rends` au niveau global | refusé (erreur sémantique) |
+| Appel d'une fonction avant sa déclaration | refusé (erreur sémantique) |
+| `a < b < c` | `(a < b) < c` |
+| `7 / 2`, `4 / 2` | `3.5`, `2.0` |
+| `1 / 0`, `1 % 0` | erreur d'exécution |
+| `l[taille(l)]` | erreur d'exécution (indice hors limites) |
+| `l[-1]` | le dernier élément (comme en Python) |
 
 ## Programmes d'exemple
+
+Chaque programme a un fichier `.attendu` qui contient sa sortie exacte. Ils ont été vérifiés à la main par l'équipe et servent de test central (étape 8).
 
 | Fichier | Ce qu'il montre |
 |---|---|
 | `01_bonjour.alt` | variables, textes et échappements, booléens, `rien`, arithmétique, priorités |
-| `02_factorielle.alt` | fonctions, récursion, `pour` (dont une boucle de 0 tour) |
+| `02_factorielle.alt` | fonctions, récursion, `pour` (dont une boucle de 0 tour), grands entiers |
 | `03_fizzbuzz.alt` | `si` / `sinon si` / `sinon`, `%`, comparaisons, `et` / `ou` / `non` |
 | `04_listes.alt` | listes, indices, affectation d'un élément, prédéfinies, globale modifiée par une fonction |
 | `05_premiers.alt` | `tantque` imbriqués, `rends` au milieu d'une boucle, fonction sans paramètre |
@@ -139,7 +239,8 @@ Points particuliers :
 ## Limites assumées
 
 - Pas de types déclarés (peut-être en extension 12).
-- Pas de fonctions imbriquées ; les fonctions ne sont pas des valeurs.
-- Pas de dictionnaires, pas de `pour chaque` sur une liste, pas de lecture au clavier.
-- Les opérandes de `et` / `ou` / `non` ne sont pas vérifiés : `1 ou 2` n'est pas une erreur de compilation.
+- Pas de fonctions imbriquées ; les fonctions ne sont pas des valeurs ; pas de récursion mutuelle.
+- Pas de dictionnaires, pas de `pour chaque` sur une liste, pas de `pour` avec un pas, pas de lecture au clavier.
+- Pas de `arrete` / `continue` dans les boucles : on sort d'une boucle avec une condition, ou avec `rends` dans une fonction.
+- Les opérandes de `et` / `ou` / `non` et les conditions ne sont pas vérifiés : `1 ou 2` n'est pas une erreur de compilation.
 - Le formateur (étape 10) perd les commentaires, car ils ne sont pas dans l'arbre.
