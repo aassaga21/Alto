@@ -8,11 +8,11 @@
 
 Une spécification, c'est le **mode d'emploi** du langage. Elle répond à trois questions, une par grand morceau du compilateur :
 
-| Question | Partie de la spec | Qui s'en sert |
-|---|---|---|
-| Quels sont les « mots » ? (`var`, `42`, `"bonjour"`, `==`) | **Lexique** | le lexer (étapes 2-3) |
-| Comment les mots s'assemblent-ils en phrases ? | **Grammaire** (EBNF) | le parser (étapes 4-6) |
-| Que veut dire une phrase correcte, et lesquelles sont interdites ? | **Sémantique** | l'analyse (étape 7) et le générateur (étape 8) |
+| Question                                                           | Partie de la spec    | Qui s'en sert                                  |
+| ------------------------------------------------------------------ | -------------------- | ---------------------------------------------- |
+| Quels sont les « mots » ? (`var`, `42`, `"bonjour"`, `==`)         | **Lexique**          | le lexer (étapes 2-3)                          |
+| Comment les mots s'assemblent-ils en phrases ?                     | **Grammaire** (EBNF) | le parser (étapes 4-6)                         |
+| Que veut dire une phrase correcte, et lesquelles sont interdites ? | **Sémantique**       | l'analyse (étape 7) et le générateur (étape 8) |
 
 Chaque flou dans la spécification devient plus tard une décision prise au hasard au milieu du code. Exemple : « `pour i de 1 jusqua 3` fait-il 2 ou 3 tours ? ». Si la spec ne le dit pas, Arthur (générateur) et Luca (sémantique) risquent de ne pas faire le même choix.
 
@@ -20,14 +20,14 @@ Chaque flou dans la spécification devient plus tard une décision prise au hasa
 
 L'EBNF est une façon compacte d'écrire une grammaire :
 
-| Notation | Sens | Exemple |
-|---|---|---|
-| `"var"` | le mot exact | `"var"` |
-| `IDENT`, `ENTIER` | un token d'une catégorie | `x`, `42` |
-| `a b` | `a` puis `b` | `"var" IDENT` |
-| `a \| b` | `a` **ou** `b` | `"vrai" \| "faux"` |
-| `[ a ]` | `a` est **facultatif** | `"rends" [ expression ] ";"` |
-| `{ a }` | `a` répété **zéro fois ou plus** | `{ instruction }` |
+| Notation          | Sens                             | Exemple                      |
+| ----------------- | -------------------------------- | ---------------------------- |
+| `"var"`           | le mot exact                     | `"var"`                      |
+| `IDENT`, `ENTIER` | un token d'une catégorie         | `x`, `42`                    |
+| `a b`             | `a` puis `b`                     | `"var" IDENT`                |
+| `a \| b`          | `a` **ou** `b`                   | `"vrai" \| "faux"`           |
+| `[ a ]`           | `a` est **facultatif**           | `"rends" [ expression ] ";"` |
+| `{ a }`           | `a` répété **zéro fois ou plus** | `{ instruction }`            |
 
 Lis par exemple la règle du `si` :
 
@@ -60,21 +60,23 @@ Un brouillon complet est dans [`../specification.md`](../specification.md), avec
 
 Les choix principaux du brouillon :
 
-| Choix | Dans Alto | Remarque |
-|---|---|---|
-| Déclarer une variable | `var x = 3;` | |
-| Afficher | `ecris a, b;` | valeurs séparées par une espace |
-| Fonction | `fonction f(a, b) { rends a + b; }` | pas de types |
-| Boucle bornée | `pour i de 1 jusqua 10 { }` | **les deux bornes sont incluses** (différent de `range`) |
-| Boucle conditionnelle | `tantque c { }` | |
-| Condition | `si … { } sinon si … { } sinon { }` | |
-| Booléens, absence de valeur | `vrai`, `faux`, `rien` | |
-| Logique | `et`, `ou`, `non` | |
-| Fin d'instruction | `;` | blocs entre accolades |
-| Commentaire | `# …` | |
-| Prédéfinies | `taille`, `ajoute`, `texte` | |
+| Choix                       | Dans Alto                           | Remarque                                                 |
+| --------------------------- | ----------------------------------- | -------------------------------------------------------- |
+| Déclarer une variable       | `var x = 3;`                        |                                                          |
+| Afficher                    | `ecris a, b;`                       | valeurs séparées par une espace                          |
+| Fonction                    | `fonction f(a, b) { rends a + b; }` | pas de types                                             |
+| Boucle bornée               | `pour i de 1 jusqua 10 { }`         | **les deux bornes sont incluses** (différent de `range`) |
+| Boucle conditionnelle       | `tantque c { }`                     |                                                          |
+| Condition                   | `si … { } sinon si … { } sinon { }` |                                                          |
+| Booléens, absence de valeur | `vrai`, `faux`, `rien`              |                                                          |
+| Logique                     | `et`, `ou`, `non`                   |                                                          |
+| Fin d'instruction           | `;`                                 | blocs entre accolades                                    |
+| Commentaire                 | `# …`                               |                                                          |
+| Prédéfinies                 | `taille`, `ajoute`, `texte`         |                                                          |
 
 ## 4. Pas à pas (réunion 0)
+
+...
 
 1. **Lisez les 5 exemples à voix haute**, chacun le sien. Est-ce qu'Alto vous plaît ? Voulez-vous changer un mot-clé (`ecris` → `affiche`, `var` → `soit`…) ? **C'est maintenant ou jamais** : après, ça coûte cher.
 2. **Lisez la spec section par section** et posez-vous les questions « au bord » :
