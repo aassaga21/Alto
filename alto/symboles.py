@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 
 from alto.erreurs import Position
+from alto.typage import Type
 
 
 class Genre(Enum):
@@ -22,6 +23,10 @@ class Symbole:
     genre: Genre
     pos: Position
     nb_parametres: int = 0  # pour les fonctions
+    # extension 12 : le type d'une variable, ceux des paramètres et du retour d'une fonction
+    type_valeur: Type = Type.INCONNU
+    types_parametres: tuple[Type, ...] = ()
+    type_retour: Type = Type.INCONNU
 
 
 @dataclass

@@ -40,6 +40,8 @@ class TokenKind(Enum):
     CROCHET_D = "]"
     VIRGULE = ","
     POINT_VIRGULE = ";"
+    DEUX_POINTS = ":"  # var x: entier (extension 12)
+    FLECHE = "->"  # fonction f() -> texte (extension 12)
     EGAL = "="
     EGAL_EGAL = "=="
     DIFFERENT = "!="

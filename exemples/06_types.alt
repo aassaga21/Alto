@@ -1,0 +1,42 @@
+# Typage statique (extension 12) : annotations facultatives, typage graduel.
+fonction moyenne(valeurs: liste) -> decimal {
+    var total: decimal = 0;
+    pour i de 0 jusqua taille(valeurs) - 1 {
+        total = total + valeurs[i];
+    }
+    rends total / taille(valeurs);
+}
+
+fonction mention(note: decimal) -> texte {
+    si note >= 16 {
+        rends "très bien";
+    } sinon si note >= 12 {
+        rends "bien";
+    }
+    rends "passable";
+}
+
+fonction separateur(largeur: entier) -> rien {
+    var trait: texte = "";
+    pour i de 1 jusqua largeur {
+        trait = trait + "-";
+    }
+    ecris trait;
+}
+
+var notes: liste = [12, 15.5, 17];
+var m: decimal = moyenne(notes);
+ecris "moyenne :", m, mention(m);
+separateur(10);
+
+var somme: entier = 0;
+pour i de 1 jusqua 4 {
+    somme = somme + i;
+}
+var pair: booleen = somme % 2 == 0;
+ecris "somme :", somme, "paire :", pair;
+
+# Sans annotation, le type est inconnu : la variable accepte n'importe quelle valeur.
+var libre = 3;
+libre = "trois";
+ecris libre, mention(9);

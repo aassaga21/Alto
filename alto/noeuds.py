@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, fields, is_dataclass
+from dataclasses import MISSING, dataclass, field, fields, is_dataclass
 
 from alto.erreurs import SANS_POSITION, Position
+from alto.typage import Type
 
 # --- Expressions ---------------------------------------------------------------
 
@@ -100,6 +101,7 @@ class Declaration:
     nom: str
     valeur: Expr
     pos: Position = field(default=SANS_POSITION, compare=False, repr=False)
+    annotation: Type | None = None  # var x: entier = ... (extension 12)
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,6 +153,9 @@ class Fonction:
     parametres: tuple[str, ...]
     corps: Bloc
     pos: Position = field(default=SANS_POSITION, compare=False, repr=False)
+    # extension 12 : vide si aucun paramètre n'est annoté, sinon un type (ou None) par paramètre
+    types_parametres: tuple[Type | None, ...] = ()
+    type_retour: Type | None = None  # fonction f() -> texte
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,6 +203,8 @@ def _afficher(
         if f.name == "pos":
             continue
         valeur = getattr(noeud, f.name)
+        if f.default is not MISSING and valeur == f.default:
+            continue  # une annotation absente (extension 12) n'encombre pas l'affichage
         if _est_noeud(valeur):
             enfants.append((f.name, valeur))
         elif isinstance(valeur, tuple) and valeur and all(_est_noeud(v) for v in valeur):

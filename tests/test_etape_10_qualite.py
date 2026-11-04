@@ -177,7 +177,9 @@ def test_un_programme_vide_reste_vide() -> None:
         ("ecris (-a) * b;", "ecris -a * b;"),
         ("ecris - - a;", "ecris - -a;"),
         ("ecris (a + b)[0];", "ecris (a + b)[0];"),
-        ("ecris taille([a])[0];", "ecris taille([a])[0];"),
+        # `texte` rend un texte, qu'on peut indexer (indexer `taille(…)`, un entier, est
+        # refusé par le typage de l'extension 12)
+        ("ecris texte([a])[0];", "ecris texte([a])[0];"),
     ],
 )
 def test_parentheses_minimales(source: str, attendu: str) -> None:

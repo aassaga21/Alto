@@ -88,10 +88,12 @@ def test_erreurs_semantiques(source: str, backend: str) -> None:
 @pytest.mark.parametrize(
     "source",
     [
-        "pour i de 1.5 jusqua 2 {}",
-        "pour i de 1 jusqua 2.5 {}",
-        "pour i de vrai jusqua 2 {}",
-        "pour i de 1 jusqua faux {}",
+        # une variable sans annotation : son type est inconnu, l'erreur arrive à l'exécution
+        # (avec un littéral, `pour i de 1.5 …`, le typage de l'extension 12 la signale avant)
+        "var d = 1.5; pour i de d jusqua 2 {}",
+        "var f = 2.5; pour i de 1 jusqua f {}",
+        "var d = vrai; pour i de d jusqua 2 {}",
+        "var f = faux; pour i de 1 jusqua f {}",
     ],
 )
 def test_bornes_entieres(source: str, backend: str) -> None:
