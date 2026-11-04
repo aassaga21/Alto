@@ -1,6 +1,8 @@
-import importlib.util
+import inspect
+import os
 import subprocess
 import sys
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -9,15 +11,10 @@ from alto.backend import Sortie
 from alto.cli import ERREUR_COMPILATION, ERREUR_EXECUTION, OK, main
 from alto.compilateur import compiler, executer, executer_sortie
 from alto.erreurs import ErreurExecution, ErreursMultiples, Position
+from alto.repl import INVITE, SUITE, Reponse, repl
 
 RACINE = Path(__file__).parent.parent
 EXEMPLES = sorted((RACINE / "exemples").glob("*.alt"))
-
-#: `run`, `transpile` et le REPL ont besoin du générateur d'Arthur (étape 8).
-sans_generateur = pytest.mark.skipif(
-    importlib.util.find_spec("alto.generateur") is None,
-    reason="le générateur (étape 8) n'est pas encore sur main",
-)
 
 
 def ecrire(tmp_path: Path, source: str) -> str:
@@ -162,16 +159,14 @@ def test_executer_sortie_affiche_sur_stdout(capsys: pytest.CaptureFixture[str]) 
     assert capsys.readouterr().out == "bonjour\n"
 
 
-# --- run, transpile, REPL : à activer avec l'étape 8 ---
+# --- run et transpile ---
 
 
-@sans_generateur
 def test_run(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["run", ecrire(tmp_path, "ecris 1 + 1;")]) == OK
     assert capsys.readouterr().out == "2\n"
 
 
-@sans_generateur
 def test_run_erreur_d_execution_ramenee_a_la_ligne_alto(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -180,20 +175,17 @@ def test_run_erreur_d_execution_ramenee_a_la_ligne_alto(
     assert "p.alt:2 : erreur d'exécution : indice hors limites" in capsys.readouterr().err
 
 
-@sans_generateur
 def test_executer_une_division_par_zero() -> None:
     with pytest.raises(ErreurExecution) as erreur:
         executer("ecris 1 / 0;")
     assert isinstance(erreur.value.__cause__, ZeroDivisionError)
 
 
-@sans_generateur
 def test_transpile_a_l_ecran(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["transpile", ecrire(tmp_path, "ecris 1 + 1;")]) == OK
     assert "_ecris(1 + 1)" in capsys.readouterr().out
 
 
-@sans_generateur
 def test_transpile_dans_un_fichier(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     sortie = tmp_path / "p.py"
     assert main(["transpile", ecrire(tmp_path, "ecris 1 + 1;"), "-o", str(sortie)]) == OK
@@ -201,7 +193,6 @@ def test_transpile_dans_un_fichier(tmp_path: Path, capsys: pytest.CaptureFixture
     assert "_ecris(1 + 1)" in sortie.read_text(encoding="utf-8")
 
 
-@sans_generateur
 def test_python_m_alto_run() -> None:
     resultat = subprocess.run(
         [sys.executable, "-m", "alto", "run", "exemples/01_bonjour.alt"],
@@ -213,3 +204,123 @@ def test_python_m_alto_run() -> None:
     )
     assert resultat.returncode == OK
     assert resultat.stdout.startswith("Bonjour, Alto !")
+
+
+# --- REPL ---
+
+
+def session() -> Generator[Reponse, str, None]:
+    """Une session de REPL déjà démarrée."""
+    s = repl()
+    next(s)
+    return s
+
+
+def test_le_repl_est_un_generateur() -> None:
+    s = repl()
+    assert inspect.isgenerator(s)
+    assert next(s) == Reponse("", INVITE)
+
+
+def test_le_repl_garde_l_etat_et_survit_aux_erreurs() -> None:
+    s = session()
+    s.send("var x = 20;")
+    assert "n'est pas déclaré" in s.send("ecris y;").sortie
+    assert s.send("x * 2 + 2").sortie == "42\n"
+
+
+def test_le_repl_attend_la_fin_du_bloc() -> None:
+    s = session()
+    assert s.send("si vrai {").invite == SUITE
+    assert s.send('ecris "oui";').sortie == ""
+    reponse = s.send("}")
+    assert reponse.sortie == "oui\n"
+    assert reponse.invite == INVITE
+
+
+def test_une_accolade_dans_un_texte_ne_compte_pas() -> None:
+    s = session()
+    assert s.send('ecris "{";') == Reponse("{\n", INVITE)
+
+
+def test_le_repl_n_affiche_pas_deux_fois_les_anciens_ecris() -> None:
+    s = session()
+    assert s.send('ecris "a";').sortie == "a\n"
+    assert s.send('ecris "b";').sortie == "b\n"
+
+
+def test_une_ligne_vide_ne_fait_rien() -> None:
+    s = session()
+    assert s.send("") == Reponse("", INVITE)
+
+
+def test_une_instruction_avec_point_virgule_n_affiche_rien() -> None:
+    s = session()
+    assert s.send("var x = 1;").sortie == ""
+    assert s.send("x = x + 1;").sortie == ""
+    assert s.send("x").sortie == "2\n"
+
+
+def test_une_fonction_definie_puis_appelee_plus_tard() -> None:
+    s = session()
+    s.send("fonction double(n) {")
+    s.send("rends n * 2;")
+    s.send("}")
+    assert s.send("double(21)").sortie == "42\n"
+
+
+def test_une_fonction_qui_modifie_une_globale() -> None:
+    s = session()
+    s.send("var compteur = 0;")
+    s.send("fonction incr() { compteur = compteur + 1; }")
+    s.send("incr();")
+    s.send("incr();")
+    assert s.send("compteur").sortie == "2\n"
+
+
+def test_une_saisie_refusee_ne_change_pas_l_etat() -> None:
+    s = session()
+    s.send("var x = 1;")
+    assert "déjà déclaré" in s.send("var x = 2;").sortie
+    assert s.send("x").sortie == "1\n"
+
+
+def test_une_erreur_d_execution_ne_casse_pas_la_session() -> None:
+    s = session()
+    assert s.send("ecris 1 / 0;").sortie == "erreur d'exécution : division par zéro\n"
+    assert s.send("1 + 1").sortie == "2\n"
+
+
+def test_une_declaration_qui_echoue_peut_etre_refaite() -> None:
+    s = session()
+    assert "division par zéro" in s.send("var z = 1 / 0;").sortie
+    s.send("var z = 5;")
+    assert s.send("z").sortie == "5\n"
+
+
+def test_ce_qui_est_affiche_avant_l_erreur_est_garde() -> None:
+    s = session()
+    sortie = s.send('ecris "avant"; ecris 1 / 0;').sortie
+    assert sortie.startswith("avant\n")
+    assert "division par zéro" in sortie
+
+
+def test_l_affichage_suit_les_regles_d_alto() -> None:
+    s = session()
+    assert s.send("[1, vrai, rien]").sortie == "[1, vrai, rien]\n"
+
+
+def test_python_m_alto_repl() -> None:
+    resultat = subprocess.run(
+        [sys.executable, "-m", "alto", "repl"],
+        check=False,
+        cwd=RACINE,
+        input="var x = 20;\nx * 2 + 2\n",
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        # sous Windows, un tube utilise cp1252 par défaut : on force l'UTF-8 (accents, « — »)
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+    )
+    assert resultat.returncode == OK
+    assert "42" in resultat.stdout
