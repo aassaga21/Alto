@@ -1,0 +1,14 @@
+name: qualite
+on: [push, pull_request]
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest ruff mypy
+      - run: python -m pytest
+      - run: python -m ruff check .
+      - run: python -m mypy alto

@@ -6,6 +6,7 @@ import traceback
 from dataclasses import dataclass
 
 from alto.backend import Sortie
+from alto.backends import BACKENDS
 from alto.erreurs import ErreurAlto, ErreurExecution, Position
 from alto.noeuds import Programme
 from alto.parser import parse
@@ -33,17 +34,22 @@ def compiler(source: str) -> Compilation:
     return Compilation(programme, analyser(programme))
 
 
-def transpiler(source: str) -> Sortie:
-    """Le code Python, et la correspondance de ses lignes avec le source."""
-    compiler(source)  # les erreurs de compilation passent avant
-    # À brancher quand le générateur d'Arthur (étape 8) sera sur main :
-    # voir guide/09_cli_repl.md, section 3.1, étape c.
-    raise ErreurAlto("la génération de Python n'est pas encore disponible (étape 8)")
+def transpiler(source: str, backend: str = "python") -> Sortie:
+    """Genere avec le backend choisi, apres verification du programme."""
+    compilation = compiler(source)
+    try:
+        generateur = BACKENDS[backend]
+    except KeyError:
+        raise ErreurAlto(f"backend inconnu : {backend}") from None
+    return generateur.generer(compilation.programme, compilation.analyse)
 
 
-def executer(source: str) -> None:
-    """Compile et exécute `source` ; l'affichage va sur `sys.stdout`."""
-    executer_sortie(transpiler(source))
+def executer(source: str, backend: str = "python") -> None:
+    """Compile et execute le source avec le backend choisi."""
+    sortie = transpiler(source, backend)
+    if not BACKENDS[backend].executable:
+        raise ErreurAlto(f"le backend {backend} ne produit pas du code executable")
+    executer_sortie(sortie)
 
 
 def executer_sortie(sortie: Sortie) -> None:

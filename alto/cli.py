@@ -7,6 +7,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from alto.backends import BACKENDS
 from alto.compilateur import compiler, executer, transpiler
 from alto.erreurs import ErreurAlto, ErreurExecution, formater
 
@@ -23,6 +24,9 @@ def _construire_parser() -> argparse.ArgumentParser:
     transpile = commandes.add_parser("transpile", help="affiche le Python généré")
     transpile.add_argument("fichier", type=Path)
     transpile.add_argument("-o", "--sortie", type=Path, help="écrit le Python dans ce fichier")
+
+    for commande in (run, transpile):
+        commande.add_argument("--backend", choices=sorted(BACKENDS), default="python")
 
     check = commandes.add_parser("check", help="vérifie sans exécuter")
     check.add_argument("fichier", type=Path)
@@ -49,11 +53,11 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         if args.commande == "run":
-            executer(source)
+            executer(source, backend=args.backend)
         elif args.commande == "check":
             compiler(source)
         elif args.commande == "transpile":
-            code = transpiler(source).code
+            code = transpiler(source, backend=args.backend).code
             if args.sortie is None:
                 print(code, end="")
             else:
