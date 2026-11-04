@@ -27,8 +27,9 @@ def test_run_exemples(backend: str, chemin: Path, capsys: pytest.CaptureFixture[
         ("fonction f(l) {\n rends l[5];\n}\necris f([1]);", 2),
         ("si faux {} sinon si vrai {\n ecris 1 / 0;\n}", 2),
         ("pour i de 1 jusqua 2 {\n ecris 1 / 0;\n}", 2),
-        ("ecris taille(1);", 1),
-        ("pour i de 1 jusqua 2.5 {}", 1),
+        # variables sans annotation : avec des littéraux, le typage (extension 12) refuse avant
+        ("var n = 1; ecris taille(n);", 1),
+        ("var f = 2.5; pour i de 1 jusqua f {}", 1),
     ],
 )
 def test_erreur_ligne_source(backend: str, source: str, ligne: int) -> None:

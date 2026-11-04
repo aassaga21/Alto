@@ -33,6 +33,8 @@ SYMBOLES_DE_LA_SPEC = [
     "]",
     ",",
     ";",
+    ":",
+    "->",
     "=",
     "==",
     "!=",
@@ -87,7 +89,7 @@ def test_symboles_ne_contient_aucun_mot_cle() -> None:
     assert not any(symbole.isalpha() for symbole, _ in SYMBOLES)
 
 
-@pytest.mark.parametrize(("court", "long"), [("=", "=="), ("<", "<="), (">", ">=")])
+@pytest.mark.parametrize(("court", "long"), [("=", "=="), ("<", "<="), (">", ">="), ("-", "->")])
 def test_un_symbole_long_passe_avant_son_prefixe(court: str, long: str) -> None:
     ordre = [symbole for symbole, _ in SYMBOLES]
     assert ordre.index(long) < ordre.index(court)

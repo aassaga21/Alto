@@ -1,6 +1,6 @@
 # Spécification d'Alto
 
-> **Version 1.0, adoptée par l'équipe (Alexandra, Luca, Fatoumata, Arthur) le 3 novembre 2026. En attente de validation par l'enseignant.**
+> **Version 1.1** : la version 1.0, adoptée par l'équipe (Alexandra, Luca, Fatoumata, Arthur) le 3 novembre 2026, plus le **typage statique** facultatif de l'extension 12 (section *Types*). En attente de validation par l'enseignant.
 > Toute modification passe par une PR qui met aussi à jour les programmes de `exemples/` et leurs fichiers `.attendu`, et doit être annoncée à toute l'équipe.
 
 ## Identité
@@ -46,7 +46,8 @@ si total == factorielle(5) {
 - **Identifiants** : une lettre (au sens d'Unicode, accents permis), puis des lettres, chiffres ou `_`. Un identifiant **ne commence pas par `_`** : ce préfixe est réservé au code Python généré.
 - **Casse** : Alto distingue majuscules et minuscules. `Si` ou `VAR` sont des identifiants, pas des mots-clés.
 - **Mots-clés** (réservés, ne peuvent pas servir de nom) : `var fonction rends si sinon tantque pour de jusqua ecris vrai faux rien et ou non`.
-- **Symboles** : `( ) { } [ ] , ; = == != < <= > >= + - * / %`.
+- **Symboles** : `( ) { } [ ] , ; : -> = == != < <= > >= + - * / %`. Les symboles `:` et `->` servent aux annotations de type (section *Types*).
+- **Noms de types** : `entier decimal texte booleen liste rien`. Ce ne sont **pas** des mots-clés (sauf `rien`, qui l'était déjà) : `texte` reste aussi le nom d'une fonction prédéfinie. Le parser les reconnaît seulement après `:` ou `->`.
 
 Les jetons qui se ressemblent : `=` (affectation) et `==` (égalité), `<` et `<=`, `>` et `>=`. Le lexer essaie toujours le symbole le plus long d'abord. Un `!` seul est un caractère inattendu.
 
@@ -61,10 +62,12 @@ programme     = { instruction } FIN ;
 instruction   = declaration | fonction | si | tantque | pour | rends | ecris
               | affectation | expression ";" ;
 
-declaration   = "var" IDENT "=" expression ";" ;
+declaration   = "var" IDENT [ ":" type ] "=" expression ";" ;
 affectation   = cible "=" expression ";" ;
 cible         = IDENT | postfixe "[" expression "]" ;
-fonction      = "fonction" IDENT "(" [ IDENT { "," IDENT } ] ")" bloc ;
+fonction      = "fonction" IDENT "(" [ parametre { "," parametre } ] ")" [ "->" type ] bloc ;
+parametre     = IDENT [ ":" type ] ;
+type          = "entier" | "decimal" | "texte" | "booleen" | "liste" | "rien" ;
 si            = "si" expression bloc { "sinon" "si" expression bloc } [ "sinon" bloc ] ;
 tantque       = "tantque" expression bloc ;
 pour          = "pour" IDENT "de" expression "jusqua" expression bloc ;
@@ -148,7 +151,7 @@ Alto manipule six sortes de valeurs : les **entiers** (sans limite de taille), l
   - `a` et `b` sont évalués **une seule fois**, avant le premier tour, et doivent être des entiers (sinon, erreur d'exécution).
   - La variable `i` est déclarée par la boucle : elle n'existe que dans la boucle et ne doit pas déjà être visible (pas de masquage). Deux boucles `pour i` l'une après l'autre sont permises.
   - Modifier `i` dans le corps est permis, mais ne change pas le tour suivant : `i` reprend la valeur prévue au début de chaque tour.
-- **Conditions.** Les conditions de `si` et `tantque` sont prévues pour être des booléens. Ce n'est pas vérifié à la compilation ; à l'exécution, une autre valeur suit la règle de Python : `0`, `0.0`, `""`, `[]` et `rien` comptent comme faux, tout le reste comme vrai.
+- **Conditions.** Les conditions de `si` et `tantque` sont prévues pour être des booléens. Depuis la version 1.1, une condition dont le type est **connu** et n'est pas `booleen` est une erreur de type (`si 1 { }`). Si le type est inconnu (variable sans annotation), la valeur suit à l'exécution la règle de Python : `0`, `0.0`, `""`, `[]` et `rien` comptent comme faux, tout le reste comme vrai.
 - **Blocs vides.** Un bloc vide `{ }` est permis partout (`si vrai { }`, `fonction f() { }`).
 
 ### Affichage
@@ -197,9 +200,82 @@ fichier.alt:ligne:colonne : genre : message
 | `erreur lexicale` | caractère inattendu `@`, texte non terminé, échappement invalide `\q` |
 | `erreur de syntaxe` | `;` oublié (signalé juste après le token précédent), `}` manquant, cible d'affectation invalide |
 | `erreur sémantique` | variable non déclarée, double déclaration, masquage, `rends` hors fonction, mauvais nombre d'arguments, fonction déclarée dans un bloc |
+| `erreur de type` | valeur qui ne respecte pas une annotation, opération impossible entre types connus (`1 + "a"`), condition non booléenne (section *Types*) |
 | `erreur d'exécution` | division (ou `%`) par zéro, indice hors limites, opération impossible comme `1 + "a"`, bornes de `pour` non entières |
 
 Une erreur d'exécution arrête le programme et affiche un message qui désigne **la ligne Alto** fautive, sans traceback Python. Ce qui a été affiché avant l'erreur reste affiché.
+
+## Types (extension 12)
+
+Les annotations de type sont **facultatives**. Un programme sans annotation (comme ceux de la version 1.0) reste valide.
+
+### Les types
+
+| Type | Valeurs |
+|---|---|
+| `entier` | `0`, `42`, `-3` |
+| `decimal` | `3.14`, `2.0` |
+| `texte` | `"abc"` |
+| `booleen` | `vrai`, `faux` |
+| `liste` | `[1, 2]` (le type des éléments n'est pas suivi) |
+| `rien` | `rien` |
+
+### Les annotations
+
+```
+var age: entier = 20;
+fonction moyenne(a: decimal, b: decimal) -> decimal {
+    rends (a + b) / 2;
+}
+```
+
+- `var x: T = valeur;` : la valeur, puis toutes les affectations de `x`, doivent être de type `T`.
+- `fonction f(p: T, q) -> R` : chaque paramètre peut être annoté ou non ; chaque argument d'un appel et chaque `rends` sont vérifiés. Une fonction `-> rien` peut faire `rends;`.
+- La variable d'une boucle `pour` est toujours un `entier`.
+
+### Typage graduel
+
+Une variable ou un paramètre **sans annotation** a le type inconnu `?`, compatible avec tout. Le compilateur ne signale une erreur que lorsqu'il **sait** que les types ne collent pas :
+
+- `var x = "a"; var n: entier = x;` est accepté (le type de `x` est inconnu), l'erreur éventuelle arrive à l'exécution ;
+- `var n: entier = "a";` est refusé à la compilation.
+
+### Compatibilité
+
+Une valeur de type `R` est acceptée là où on attend `T` si `T` et `R` sont le même type, si l'un des deux est `?`, ou si **un `entier` est donné là où on attend un `decimal`** (`var x: decimal = 1;` est permis, l'inverse non).
+
+### Le type de chaque expression
+
+| Expression | Type |
+|---|---|
+| un littéral | son type (`3` : `entier`, `"a"` : `texte`, `[…]` : `liste`…) |
+| une variable | son annotation, ou `?` |
+| `entier + - * % entier` | `entier` |
+| `+ - * %` avec au moins un `decimal` (et l'autre nombre) | `decimal` |
+| `nombre / nombre` | `decimal` |
+| `texte + texte`, `liste + liste` | `texte`, `liste` |
+| `- nombre` | le même type |
+| `==`, `!=` (n'importe quels types) | `booleen` |
+| `< <= > >=` entre deux nombres (ou booléens), deux textes, ou deux listes | `booleen` |
+| `non x` | `booleen` |
+| `a et b`, `a ou b` | `booleen` si `a` et `b` sont booléens, sinon `?` |
+| `texte[entier]` | `texte` |
+| `liste[entier]` | `?` |
+| `f(…)` | le type de retour annoté de `f`, ou `?` |
+| `taille(x)`, `ajoute(l, x)`, `texte(x)` | `entier`, `rien`, `texte` |
+
+Avec un opérande de type `?`, le résultat est `?`, sauf pour les opérations dont le type ne dépend pas des opérandes (`/`, comparaisons, `non`, `taille`…).
+
+### Ce qui est refusé (erreur de type)
+
+- une valeur qui ne respecte pas une annotation (déclaration, affectation, argument, `rends`) ;
+- une opération **impossible** entre types connus : `1 + "a"`, `"a" * 2`, `- "a"`, `"a" < 1`, `rien < 1` ;
+- indexer autre chose qu'une liste ou un texte (`3[0]`), un indice qui n'est pas un entier (`l["a"]`), modifier un texte (`t[0] = "x";`) ;
+- un argument de mauvais type pour une prédéfinie : `taille(3)`, `ajoute("a", 1)` ;
+- une borne de `pour` qui n'est pas un `entier` ;
+- une **condition** de `si` ou de `tantque` dont le type est connu et n'est pas `booleen` : `si 1 { }`. C'est le seul cas où un programme 1.0 qui s'exécutait devient refusé (la version 1.0 suivait la règle de Python pour les conditions).
+
+Les erreurs de type sont collectées avec les autres erreurs sémantiques et affichées avec le genre `erreur de type`.
 
 ## Cas limites décidés
 
@@ -235,12 +311,13 @@ Chaque programme a un fichier `.attendu` qui contient sa sortie exacte. Ils ont 
 | `03_fizzbuzz.alt` | `si` / `sinon si` / `sinon`, `%`, comparaisons, `et` / `ou` / `non` |
 | `04_listes.alt` | listes, indices, affectation d'un élément, prédéfinies, globale modifiée par une fonction |
 | `05_premiers.alt` | `tantque` imbriqués, `rends` au milieu d'une boucle, fonction sans paramètre |
+| `06_types.alt` | annotations de type (extension 12), mélange de variables annotées et non annotées |
 
 ## Limites assumées
 
-- Pas de types déclarés (peut-être en extension 12).
+- Le typage (section *Types*) ne connaît pas le type des éléments d'une liste, et ne vérifie pas qu'une fonction annotée rend une valeur sur tous les chemins.
 - Pas de fonctions imbriquées ; les fonctions ne sont pas des valeurs ; pas de récursion mutuelle.
 - Pas de dictionnaires, pas de `pour chaque` sur une liste, pas de `pour` avec un pas, pas de lecture au clavier.
 - Pas de `arrete` / `continue` dans les boucles : on sort d'une boucle avec une condition, ou avec `rends` dans une fonction.
-- Les opérandes de `et` / `ou` / `non` et les conditions ne sont pas vérifiés : `1 ou 2` n'est pas une erreur de compilation.
+- Les opérandes de `et` / `ou` / `non` ne sont pas vérifiés : `1 ou 2` n'est pas une erreur de compilation.
 - Le formateur (étape 10) perd les commentaires, car ils ne sont pas dans l'arbre.

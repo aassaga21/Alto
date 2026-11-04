@@ -50,6 +50,12 @@ class ErreurSemantique(ErreurAlto):
     genre = "erreur sémantique"
 
 
+class ErreurType(ErreurSemantique):
+    """Une valeur dont le type ne convient pas (extension 12)."""
+
+    genre = "erreur de type"
+
+
 class ErreurExecution(ErreurAlto):
     genre = "erreur d'exécution"
 

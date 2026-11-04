@@ -109,8 +109,9 @@ class Formateur:
     def instruction(self, instr: Instr) -> None:
         e = self.e
         match instr:
-            case Declaration(nom, valeur):
-                e.ligne(f"var {nom} = {self.expr(valeur)};")
+            case Declaration(nom, valeur, annotation=annotation):
+                type_ = "" if annotation is None else f": {annotation}"
+                e.ligne(f"var {nom}{type_} = {self.expr(valeur)};")
             case Affectation(cible, valeur):
                 e.ligne(f"{self.expr(cible)} = {self.expr(valeur)};")
             case Ecris(valeurs):
@@ -133,8 +134,13 @@ class Formateur:
                 e.ligne(f"pour {variable} de {self.expr(debut)} jusqua {self.expr(fin)} {{")
                 self.corps(corps)
                 e.ligne("}")
-            case Fonction(nom, parametres, corps):
-                e.ligne(f"fonction {nom}({', '.join(parametres)}) {{")
+            case Fonction(nom, parametres, corps, types_parametres=types, type_retour=retour):
+                types = types or (None,) * len(parametres)  # extension 12
+                params = ", ".join(
+                    p if t is None else f"{p}: {t}" for p, t in zip(parametres, types, strict=True)
+                )
+                fleche = "" if retour is None else f" -> {retour}"
+                e.ligne(f"fonction {nom}({params}){fleche} {{")
                 self.corps(corps)
                 e.ligne("}")
             case Rends(valeur):

@@ -37,6 +37,7 @@ from alto.noeuds import (
 )
 from alto.tokens import Token
 from alto.tokens import TokenKind as T
+from alto.typage import TYPES, Type
 
 
 class Precedence(IntEnum):
@@ -221,25 +222,49 @@ class Parser:
         self.avance()  # le '}'
         return Bloc(tuple(instructions), debut.position)
 
+    def type_(self) -> Type:
+        """Un nom de type après `:` ou `->` (extension 12). Ce ne sont pas des mots-clés :
+        `texte` reste aussi le nom d'une fonction prédéfinie."""
+        token = self.regarde()
+        if token.kind in (T.IDENT, T.RIEN) and token.lexeme in TYPES:
+            self.avance()
+            return TYPES[token.lexeme]
+        raise ErreurSyntaxe(
+            f"type attendu ({', '.join(TYPES)}), trouvé {_decrire(token)}", token.position
+        )
+
+    def annotation(self, introducteur: T) -> Type | None:
+        """`: entier` ou `-> texte`, facultatif."""
+        return self.type_() if self.accepte(introducteur) else None
+
     def declaration(self) -> Declaration:
         debut = self.attend(T.VAR)
         nom = self.attend(T.IDENT, "après var").lexeme
+        annotation = self.annotation(T.DEUX_POINTS)
         self.attend(T.EGAL, "après le nom de la variable")
         valeur = self.expression()
         self.attend(T.POINT_VIRGULE, "en fin de déclaration")
-        return Declaration(nom, valeur, debut.position)
+        return Declaration(nom, valeur, debut.position, annotation)
 
     def fonction(self) -> Fonction:
         debut = self.attend(T.FONCTION)
         nom = self.attend(T.IDENT, "après fonction").lexeme
         self.attend(T.PAR_G, "après le nom de la fonction")
         parametres: list[str] = []
+        types: list[Type | None] = []
         if not self.verifie(T.PAR_D):
             parametres.append(self.attend(T.IDENT, "comme paramètre").lexeme)
+            types.append(self.annotation(T.DEUX_POINTS))
             while self.accepte(T.VIRGULE):
                 parametres.append(self.attend(T.IDENT, "comme paramètre").lexeme)
+                types.append(self.annotation(T.DEUX_POINTS))
         self.attend(T.PAR_D, "après les paramètres")
-        return Fonction(nom, tuple(parametres), self.bloc(), debut.position)
+        type_retour = self.annotation(T.FLECHE)
+        # aucun paramètre annoté : on garde () pour que l'arbre reste celui de la version 1.0
+        types_parametres = tuple(types) if any(t is not None for t in types) else ()
+        return Fonction(
+            nom, tuple(parametres), self.bloc(), debut.position, types_parametres, type_retour
+        )
 
     def rends(self) -> Rends:
         debut = self.attend(T.RENDS)
