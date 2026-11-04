@@ -1,6 +1,6 @@
 # Spécification d'Alto
 
-> **Version 1.1** : la version 1.0, adoptée par l'équipe (Alexandra, Luca, Fatoumata, Arthur) le 3 novembre 2026, plus le **typage statique** facultatif de l'extension 12 (section *Types*). En attente de validation par l'enseignant.
+> **Version 1.1** : la version 1.0, adoptée par l'équipe (Alexandra, Fatoumata, Arthur) le 3 novembre 2026, plus le **typage statique** facultatif de l'extension 12 (section *Types*). En attente de validation par l'enseignant.
 > Toute modification passe par une PR qui met aussi à jour les programmes de `exemples/` et leurs fichiers `.attendu`, et doit être annoncée à toute l'équipe.
 
 ## Identité
