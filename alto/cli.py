@@ -31,6 +31,12 @@ def _construire_parser() -> argparse.ArgumentParser:
     check = commandes.add_parser("check", help="vérifie sans exécuter")
     check.add_argument("fichier", type=Path)
 
+    fmt = commandes.add_parser(
+        "fmt", help="réécrit le programme proprement (perd les commentaires)"
+    )
+    fmt.add_argument("fichier", type=Path)
+    fmt.add_argument("--ecrire", action="store_true", help="réécrit le fichier en place")
+
     commandes.add_parser("repl", help="session interactive")
     return parser
 
@@ -62,6 +68,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(code, end="")
             else:
                 args.sortie.write_text(code, encoding="utf-8")
+        elif args.commande == "fmt":
+            code = transpiler(source, backend="formateur").code
+            if args.ecrire:
+                fichier.write_text(code, encoding="utf-8")
+            else:
+                print(code, end="")
     # l'ordre compte : ErreurExecution est une sous-classe d'ErreurAlto
     except ErreurExecution as erreur:
         print(formater(erreur, source, str(fichier)), file=sys.stderr)
