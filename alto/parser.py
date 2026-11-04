@@ -88,11 +88,11 @@ def _decrire(token: Token) -> str:
     if token.kind is T.FIN:
         return "la fin du fichier"
     if token.kind is T.TEXTE:
-        return _texte_source(token.lexeme)
+        return texte_source(token.lexeme)
     return f"'{token.lexeme}'"
 
 
-def _texte_source(valeur: str) -> str:
+def texte_source(valeur: str) -> str:
     """Le texte tel qu'il s'écrit dans le source : le lexer a retiré guillemets et `\\`."""
     echappe = (
         valeur.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\t", "\\t")
@@ -103,7 +103,7 @@ def _texte_source(valeur: str) -> str:
 def _longueur_source(token: Token) -> int:
     """Le nombre de caractères que le token occupe dans le source."""
     if token.kind is T.TEXTE:
-        return len(_texte_source(token.lexeme))
+        return len(texte_source(token.lexeme))
     return len(token.lexeme)
 
 
