@@ -45,10 +45,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _construire_parser().parse_args(argv)
 
     if args.commande == "repl":
-        # À remplacer par `from alto.repl import lancer; lancer(); return OK`
-        # quand le générateur (étape 8) sera sur main.
-        print("alto : le REPL n'est pas encore disponible (étape 8)", file=sys.stderr)
-        return ERREUR_COMPILATION
+        from alto.repl import lancer
+
+        lancer()
+        return OK
 
     fichier: Path = args.fichier
     try:

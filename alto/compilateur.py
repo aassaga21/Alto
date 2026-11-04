@@ -58,10 +58,11 @@ def executer_sortie(sortie: Sortie) -> None:
     try:
         exec(code, {"__name__": "__main__"})  # noqa: S102 (exécuter le code généré est le but)
     except Exception as exc:
-        raise _traduire(exc, sortie.correspondance) from exc
+        raise traduire(exc, sortie.correspondance) from exc
 
 
-def _traduire(exc: Exception, correspondance: dict[int, int]) -> ErreurExecution:
+def traduire(exc: Exception, correspondance: dict[int, int]) -> ErreurExecution:
+    """Une exception Python -> une `ErreurExecution` à la ligne Alto (utilisée aussi par le REPL)."""
     message = next((m for genre, m in MESSAGES.items() if isinstance(exc, genre)), str(exc))
     # de la frame la plus profonde à la moins profonde : la première qui vient du code généré
     for frame in reversed(traceback.extract_tb(exc.__traceback__)):
