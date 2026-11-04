@@ -12,6 +12,7 @@ dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5"]
 testpaths = ["tests"]
 
 [tool.mypy]
+explicit_package_bases = true
 strict = true
 python_version = "3.12"
 
