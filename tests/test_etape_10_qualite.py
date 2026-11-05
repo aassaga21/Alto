@@ -59,14 +59,15 @@ def test_le_backend_recoit_l_analyse() -> None:
     assert compiler_avec(Globales(), source).code == "{'f': {'n'}}"
 
 
-def test_une_sortie_sans_correspondance_a_un_dictionnaire_vide() -> None:
-    assert Sortie("x = 1").correspondance == {}
+# extension 13 : la correspondance des lignes est une `SourceMap` (alto/sourcemap.py)
+def test_une_sortie_sans_correspondance_a_une_source_map_vide() -> None:
+    assert Sortie("x = 1").sourcemap.lignes == {}
 
 
-def test_deux_sorties_ne_partagent_pas_leur_correspondance() -> None:
+def test_deux_sorties_ne_partagent_pas_leur_source_map() -> None:
     a, b = Sortie("a"), Sortie("b")
-    a.correspondance[1] = 1
-    assert b.correspondance == {}
+    a.sourcemap.lignes[1] = 1
+    assert b.sourcemap.lignes == {}
 
 
 def test_une_sortie_est_immuable() -> None:

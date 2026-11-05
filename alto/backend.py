@@ -11,6 +11,7 @@ from typing import Protocol
 
 from alto.noeuds import Programme
 from alto.semantique import Analyse
+from alto.sourcemap import SourceMap
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,8 +19,8 @@ class Sortie:
     """Ce que produit un backend."""
 
     code: str
-    #: ligne du code produit -> ligne du source Alto (pour les erreurs d'exécution)
-    correspondance: dict[int, int] = field(default_factory=dict)
+    #: ligne du code produit -> ligne du source Alto (erreurs d'exécution, extension 13)
+    sourcemap: SourceMap = field(default_factory=SourceMap)
 
 
 class Backend(Protocol):

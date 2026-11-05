@@ -52,11 +52,21 @@ Le pas à pas pour débutants (y compris le dépannage sous Windows) est dans [`
 |---|---|
 | `uv run python -m alto run p.alt` | exécute le programme |
 | `uv run python -m alto check p.alt` | vérifie le programme sans l'exécuter (n'affiche rien s'il est correct) |
-| `uv run python -m alto transpile p.alt` | affiche le Python généré (`-o p.py` pour l'écrire dans un fichier) |
+| `uv run python -m alto transpile p.alt` | affiche le Python généré (`-o p.py` pour l'écrire dans un fichier ; avec `--sourcemap`, écrit aussi `p.py.map.json`) |
 | `uv run python -m alto fmt p.alt` | réécrit le programme proprement (`--ecrire` pour modifier le fichier) |
 | `uv run python -m alto repl` | ouvre une session interactive |
 
 `run` et `transpile` acceptent `--backend python` (par défaut, génération de texte) ou `--backend ast` (génération avec le module `ast` de Python).
+
+La **source map** (`--sourcemap`) enregistre, pour chaque ligne du Python produit, la ligne Alto d'où elle vient :
+
+```json
+{
+  "version": 1,
+  "source": "p.alt",
+  "lignes": { "30": 1, "31": 2, "32": 4 }
+}
+```
 
 **Codes de retour** : `0` tout va bien, `1` erreur de compilation ou fichier introuvable, `2` mauvaise option, `3` erreur d'exécution.
 
@@ -152,13 +162,14 @@ def _v_66697a7a62757a7a_1(_v_6e_2):
 | 10 Qualité | `backend.py`, `backends.py`, `formateur.py` | plusieurs sorties branchées sur la même chaîne | `Protocol`, `mypy --strict` |
 | Ext. 11 | `generateur_ast.py` | génération avec le module `ast` | `ast`, `ast.unparse` |
 | Ext. 12 | `typage.py` | typage statique graduel | `Enum`, typage graduel |
+| Ext. 13 | `sourcemap.py` | source maps : ligne Python → ligne Alto, en JSON | `TypedDict`, `Literal` |
 
 La CLI et le REPL ne passent que par la façade `alto/compilateur.py` (`compiler`, `transpiler`, `executer`). Ajouter un backend dans `alto/backends.py` le rend disponible dans `--backend` **sans modifier la CLI**.
 
 ## Tests et qualité
 
 ```bash
-uv run pytest                  # tous les tests (565)
+uv run pytest                  # tous les tests (597)
 uv run pytest -k etape_03      # les tests d'une étape
 uv run mypy alto               # typage strict, sans erreur
 uv run ruff check alto tests   # style
@@ -194,7 +205,7 @@ Le projet a été réalisé à trois :
 
 | Membre | Parties |
 |---|---|
-| Alexandra | tokens et lexer (étapes 2-3), CLI et REPL (étape 9), typage statique (extension 12) |
+| Alexandra | tokens et lexer (étapes 2-3), CLI et REPL (étape 9), typage statique (extension 12), source maps (extension 13) |
 | Fatoumata | arbre syntaxique (étape 4), parser (étapes 5-6), analyse sémantique (étape 7), backends et formateur (étape 10) |
 | Arthur | génération de Python (étape 8), extension `ast` (extension 11), GitHub Action |
 

@@ -35,6 +35,7 @@ from alto.noeuds import (
 )
 from alto.parser import parse
 from alto.semantique import Analyse, analyser
+from alto.sourcemap import SourceMap
 
 ARITHMETIQUE: dict[str, type[ast.operator]] = {
     "+": ast.Add,
@@ -232,4 +233,4 @@ class BackendAst:
             if id(original) in utilisateurs:
                 for ligne in range(genere.lineno, (genere.end_lineno or genere.lineno) + 1):
                     correspondance[ligne] = original.lineno
-        return Sortie(code, correspondance)
+        return Sortie(code, SourceMap(correspondance))

@@ -15,6 +15,7 @@ from alto.lexer import tokenize
 from alto.noeuds import Programme
 from alto.parser import parse
 from alto.semantique import Analyse, analyser
+from alto.sourcemap import SourceMap
 from alto.tokens import TokenKind as T
 
 INVITE = "alto> "
@@ -83,7 +84,7 @@ def repl() -> Generator[Reponse, str, None]:
             with redirect_stdout(capture):
                 exec(compile(code, NOM_FICHIER, "exec"), espace)  # noqa: S102
         except Exception as exc:  # noqa: BLE001 (le REPL doit survivre à toute erreur)
-            sortie = capture.getvalue() + f"{traduire(exc, {})}\n"
+            sortie = capture.getvalue() + f"{traduire(exc, SourceMap())}\n"
             continue
         sortie = capture.getvalue()
         acceptees = source

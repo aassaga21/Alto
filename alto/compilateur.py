@@ -11,6 +11,7 @@ from alto.erreurs import ErreurAlto, ErreurExecution, Position
 from alto.noeuds import Programme
 from alto.parser import parse
 from alto.semantique import Analyse, analyser
+from alto.sourcemap import SourceMap
 
 NOM_FICHIER = "<alto>"
 
@@ -58,15 +59,18 @@ def executer_sortie(sortie: Sortie) -> None:
     try:
         exec(code, {"__name__": "__main__"})  # noqa: S102 (exécuter le code généré est le but)
     except Exception as exc:
-        raise traduire(exc, sortie.correspondance) from exc
+        raise traduire(exc, sortie.sourcemap) from exc
 
 
-def traduire(exc: Exception, correspondance: dict[int, int]) -> ErreurExecution:
+def traduire(exc: Exception, sourcemap: SourceMap) -> ErreurExecution:
     """Une exception Python -> une `ErreurExecution` à la ligne Alto (utilisée aussi par le REPL)."""
     message = next((m for genre, m in MESSAGES.items() if isinstance(exc, genre)), str(exc))
     # de la frame la plus profonde à la moins profonde : la première qui vient du code généré
     for frame in reversed(traceback.extract_tb(exc.__traceback__)):
-        if frame.filename == NOM_FICHIER and frame.lineno in correspondance:
+        if frame.filename != NOM_FICHIER or frame.lineno is None:
+            continue
+        ligne = sourcemap.ligne_source(frame.lineno)
+        if ligne is not None:
             # colonne 0 = inconnue : `formater` n'affichera pas de ^
-            return ErreurExecution(message, Position(correspondance[frame.lineno], 0))
+            return ErreurExecution(message, Position(ligne, 0))
     return ErreurExecution(message)
