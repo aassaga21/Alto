@@ -35,6 +35,7 @@ from alto.noeuds import (
     Variable,
 )
 from alto.semantique import Analyse, analyser
+from alto.sourcemap import SourceMap
 
 PRELUDE = """def _texte(valeur):
     if valeur is True:
@@ -219,8 +220,6 @@ class BackendPython:
     def generer(self, programme: Programme, analyse: Analyse) -> Sortie:
         generateur = GenerateurPython(analyse)
         corps = generateur.programme(programme)
-        decalage = len(PRELUDE.splitlines())
-        correspondance = {
-            ligne + decalage: source for ligne, source in generateur.e.correspondance.items()
-        }
-        return Sortie(PRELUDE + corps, correspondance)
+        # les lignes du prélude passent avant celles du programme
+        sourcemap = SourceMap(generateur.e.correspondance).decalee(len(PRELUDE.splitlines()))
+        return Sortie(PRELUDE + corps, sourcemap)

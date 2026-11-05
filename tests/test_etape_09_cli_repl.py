@@ -12,6 +12,7 @@ from alto.cli import ERREUR_COMPILATION, ERREUR_EXECUTION, OK, main
 from alto.compilateur import compiler, executer, executer_sortie
 from alto.erreurs import ErreurExecution, ErreursMultiples, Position
 from alto.repl import INVITE, SUITE, Reponse, repl
+from alto.sourcemap import SourceMap
 
 RACINE = Path(__file__).parent.parent
 EXEMPLES = sorted((RACINE / "exemples").glob("*.alt"))
@@ -118,7 +119,7 @@ def test_python_m_alto_check() -> None:
 
 
 def test_une_erreur_d_execution_pointe_la_ligne_alto() -> None:
-    sortie = Sortie("x = 1\ny = x / 0\n", correspondance={1: 4, 2: 7})
+    sortie = Sortie("x = 1\ny = x / 0\n", SourceMap({1: 4, 2: 7}))
     with pytest.raises(ErreurExecution) as erreur:
         executer_sortie(sortie)
     assert erreur.value.message == "division par zéro"
@@ -127,7 +128,7 @@ def test_une_erreur_d_execution_pointe_la_ligne_alto() -> None:
 
 def test_l_erreur_d_execution_est_chainee_a_l_exception_python() -> None:
     with pytest.raises(ErreurExecution) as erreur:
-        executer_sortie(Sortie("[][0]\n", correspondance={1: 1}))
+        executer_sortie(Sortie("[][0]\n", SourceMap({1: 1})))
     assert isinstance(erreur.value.__cause__, IndexError)
     assert erreur.value.message == "indice hors limites"
 
@@ -135,14 +136,14 @@ def test_l_erreur_d_execution_est_chainee_a_l_exception_python() -> None:
 def test_l_erreur_au_fond_d_un_appel_pointe_la_ligne_la_plus_profonde() -> None:
     code = "def f(n):\n    return 1 / n\n\nf(0)\n"
     with pytest.raises(ErreurExecution) as erreur:
-        executer_sortie(Sortie(code, correspondance={1: 1, 2: 2, 4: 4}))
+        executer_sortie(Sortie(code, SourceMap({1: 1, 2: 2, 4: 4})))
     assert erreur.value.position == Position(2, 0)
 
 
 def test_une_recursion_infinie_devient_une_erreur_d_execution() -> None:
     code = "def f(n):\n    return f(n + 1)\n\nf(0)\n"
     with pytest.raises(ErreurExecution) as erreur:
-        executer_sortie(Sortie(code, correspondance={2: 3, 4: 5}))
+        executer_sortie(Sortie(code, SourceMap({2: 3, 4: 5})))
     assert erreur.value.message == "trop d'appels récursifs"
     assert erreur.value.position == Position(3, 0)
 

@@ -56,6 +56,12 @@ class ErreurType(ErreurSemantique):
     genre = "erreur de type"
 
 
+class ErreurSourceMap(ErreurAlto):
+    """Un fichier de source map illisible ou d'une version inconnue (extension 13)."""
+
+    genre = "erreur de source map"
+
+
 class ErreurExecution(ErreurAlto):
     genre = "erreur d'exécution"
 
