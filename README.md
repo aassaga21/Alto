@@ -55,6 +55,7 @@ Le pas à pas pour débutants (y compris le dépannage sous Windows) est dans [`
 | `uv run python -m alto transpile p.alt` | affiche le Python généré (`-o p.py` pour l'écrire dans un fichier ; avec `--sourcemap`, écrit aussi `p.py.map.json`) |
 | `uv run python -m alto fmt p.alt` | réécrit le programme proprement (`--ecrire` pour modifier le fichier) |
 | `uv run python -m alto repl` | ouvre une session interactive |
+| `uv run python -m alto mcp` | lance le serveur MCP, pour les assistants (voir plus bas) |
 
 `run` et `transpile` acceptent `--backend python` (par défaut, génération de texte) ou `--backend ast` (génération avec le module `ast` de Python).
 
@@ -105,6 +106,24 @@ oui
 ```
 
 Le REPL se souvient des saisies précédentes, affiche une expression tapée seule, attend la fin d'un bloc ouvert et survit aux erreurs.
+
+### Le serveur MCP
+
+Alto peut être utilisé par un assistant (Claude Code, Claude Desktop ou tout client [MCP](https://modelcontextprotocol.io)) : `uv run python -m alto mcp` lance un serveur MCP sur l'entrée et la sortie standard.
+
+| Ce que le serveur propose | Rôle |
+|---|---|
+| outil `executer_alto(source, backend)` | exécute un programme et renvoie ce qu'il affiche |
+| outil `verifier_alto(source)` | vérifie sans exécuter |
+| outil `transpiler_alto(source, backend)` | renvoie le Python produit |
+| outil `formater_alto(source)` | réécrit le programme proprement |
+| ressource `alto://specification` | la spécification du langage |
+| ressources `alto://exemples` et `alto://exemples/{nom}` | les programmes d'exemple |
+| prompt `ecrire_programme(sujet)` | écrire un programme Alto sur un sujet, puis le tester |
+
+Chaque outil renvoie un résultat structuré (`ok`, la sortie ou le code, et les erreurs avec leur genre, leur ligne et leur colonne). Ce que le programme affiche est capturé (la sortie standard sert au protocole), et une exécution est arrêtée au-delà d'un million d'étapes, pour qu'une boucle infinie ne bloque pas le serveur.
+
+Le fichier [`.mcp.json`](.mcp.json) déclare le serveur : Claude Code le propose automatiquement dans ce dépôt. Pour un autre client, la commande à configurer est `uv run python -m alto mcp`, lancée depuis le dossier du projet. La bibliothèque `mcp` est facultative pour le reste d'Alto : `uv sync --extra mcp` l'installe.
 
 ## Le langage en bref
 
@@ -163,13 +182,14 @@ def _v_66697a7a62757a7a_1(_v_6e_2):
 | Ext. 11 | `generateur_ast.py` | génération avec le module `ast` | `ast`, `ast.unparse` |
 | Ext. 12 | `typage.py` | typage statique graduel | `Enum`, typage graduel |
 | Ext. 13 | `sourcemap.py` | source maps : ligne Python → ligne Alto, en JSON | `TypedDict`, `Literal` |
+| MCP | `serveur_mcp.py` | Alto utilisable par un assistant, via le protocole MCP | `TypedDict`, `sys.settrace`, `async` |
 
 La CLI et le REPL ne passent que par la façade `alto/compilateur.py` (`compiler`, `transpiler`, `executer`). Ajouter un backend dans `alto/backends.py` le rend disponible dans `--backend` **sans modifier la CLI**.
 
 ## Tests et qualité
 
 ```bash
-uv run pytest                  # tous les tests (597)
+uv run pytest                  # tous les tests (619)
 uv run pytest -k etape_03      # les tests d'une étape
 uv run mypy alto               # typage strict, sans erreur
 uv run ruff check alto tests   # style
@@ -205,7 +225,7 @@ Le projet a été réalisé à trois :
 
 | Membre | Parties |
 |---|---|
-| Alexandra | tokens et lexer (étapes 2-3), CLI et REPL (étape 9), typage statique (extension 12), source maps (extension 13) |
+| Alexandra | tokens et lexer (étapes 2-3), CLI et REPL (étape 9), typage statique (extension 12), source maps (extension 13), serveur MCP |
 | Fatoumata | arbre syntaxique (étape 4), parser (étapes 5-6), analyse sémantique (étape 7), backends et formateur (étape 10) |
 | Arthur | génération de Python (étape 8), extension `ast` (extension 11), GitHub Action |
 

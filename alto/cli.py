@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import sys
 from collections.abc import Sequence
 from dataclasses import replace
@@ -45,6 +46,7 @@ def _construire_parser() -> argparse.ArgumentParser:
     fmt.add_argument("--ecrire", action="store_true", help="réécrit le fichier en place")
 
     commandes.add_parser("repl", help="session interactive")
+    commandes.add_parser("mcp", help="lance le serveur MCP (stdio) pour les assistants")
     return parser
 
 
@@ -59,6 +61,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         lancer()
         return OK
+
+    if args.commande == "mcp":
+        return _lancer_mcp()
 
     fichier: Path = args.fichier
     try:
@@ -94,4 +99,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     except ErreurAlto as erreur:
         print(formater(erreur, source, str(fichier)), file=sys.stderr)
         return ERREUR_COMPILATION
+    return OK
+
+
+def _lancer_mcp() -> int:
+    """Le serveur MCP demande la bibliothèque `mcp`, facultative pour le reste d'Alto."""
+    if importlib.util.find_spec("mcp") is None:
+        print(
+            "alto : le serveur MCP demande la bibliothèque mcp : uv sync --extra mcp",
+            file=sys.stderr,
+        )
+        return ERREUR_COMPILATION
+    from alto.serveur_mcp import lancer
+
+    lancer()
     return OK

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "alto": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "alto", "mcp"]
+    }
+  }
+}
