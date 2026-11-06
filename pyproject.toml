@@ -5,8 +5,12 @@ description = "Alto : un petit langage aux mots-clés français, transpilé en P
 requires-python = ">=3.12"
 dependencies = []
 
+[project.optional-dependencies]
+# le serveur MCP (python -m alto mcp) ; le reste d'Alto n'a besoin de rien
+mcp = ["mcp>=2.3,<3"]
+
 [dependency-groups]
-dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5"]
+dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5", "mcp>=2.3,<3"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
